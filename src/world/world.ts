@@ -2,8 +2,12 @@ import * as THREE from 'three/webgpu';
 
 /**
  * world-terrain agent (B) owns this module tree.
- * Stub: flat green ground plane so the boot scene is not empty.
+ *
+ * The real implementation lives in ./terrain-world.ts and ./index.ts.
+ * This module keeps the legacy boot stub alive until the orchestrator rewires
+ * main.ts; see docs/notes/world-terrain.md for the requested diff.
  */
+
 export class StubWorld {
   readonly mesh: THREE.Mesh;
 
