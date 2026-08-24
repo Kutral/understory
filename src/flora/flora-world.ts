@@ -12,7 +12,6 @@ import {
   IMPOSTOR_HEIGHT_M,
   type PineLod,
 } from './geometry';
-import { buildSpeciesGeometry } from './species-geometry';
 import { createImpostorTexture } from './impostor-texture';
 import {
   createImpostorMaterial,
