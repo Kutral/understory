@@ -10,6 +10,7 @@
 import type { AudioChannel } from '@contracts/audio';
 import type { KeyBinding } from '@contracts/input';
 import { h } from './dom';
+import { applyRemap, actionLabel } from './remap';
 import {
   ACTION_LABELS,
   AUDIO_CHANNELS,
@@ -130,11 +131,19 @@ export function createPause(
     return row(label, btn);
   });
 
+  // remap feedback ("Swapped with Brake.") — polite live region near the list
+  const remapStatus = h('p', {
+    class: 'us-pause__remap-status',
+    role: 'status',
+    hidden: true,
+  }) as HTMLParagraphElement;
+
   const controls = h(
     'fieldset',
     { class: 'us-fieldset' },
     h('legend', {}, COPY.controls),
     ...controlRows,
+    remapStatus,
   );
 
   // --- accessibility + world ----------------------------------------------
@@ -218,6 +227,7 @@ export function createPause(
     listening = { action, btn };
     btn.dataset.listening = 'true';
     btn.textContent = COPY.pressAKey;
+    setStatus(undefined); // a fresh capture starts with a clean slate
   }
 
   function cancelListening(): void {
@@ -232,8 +242,14 @@ export function createPause(
     if (listening) {
       e.preventDefault();
       e.stopPropagation();
-      if (e.code !== 'Escape') rebind(listening.action, e.code);
-      cancelListening();
+      const pending = listening;
+      cancelListening(); // restores the button label from the OLD binding
+      if (e.code === 'Escape') {
+        // Escape cancels the capture; the old binding stays untouched.
+        setStatus(`Cancelled — ${actionLabel(pending.action)} keeps ${prettyKey(codeFor(pending.action))}.`);
+        return;
+      }
+      rebind(pending.action, e.code);
       return;
     }
     if (e.code === 'Escape') {
@@ -264,17 +280,23 @@ export function createPause(
   }
 
   function rebind(action: KeyBinding['action'], code: string): void {
-    // one binding per action AND per key: drop both collisions
-    bindings = bindings
-      .filter((b) => b.action !== action && b.code !== code)
-      .concat([{ action, code }])
-      .sort(
-        (a, b) =>
-          ACTION_LABELS.findIndex((l) => l.action === a.action) -
-          ACTION_LABELS.findIndex((l) => l.action === b.action),
-      );
+    // collision handling lives in remap.ts: swaps keep every action bound,
+    // Escape is rejected, same-key is a no-op
+    const result = applyRemap(bindings, action, code);
+    if (!result.ok) {
+      setStatus(result.message);
+      return;
+    }
+    bindings = result.bindings;
     refreshKeyButtons();
-    cb.onBindingsChange(bindings);
+    cb.onBindingsChange(bindings.map((b) => ({ ...b })));
+    setStatus(result.message); // e.g. "Swapped with Brake." on a swap
+  }
+
+  /** Show remap feedback near the controls list (hidden when message empty). */
+  function setStatus(message: string | undefined): void {
+    remapStatus.textContent = message ?? '';
+    remapStatus.hidden = !message;
   }
 
   function refreshKeyButtons(): void {

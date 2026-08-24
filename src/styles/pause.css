@@ -307,6 +307,13 @@
   color: var(--ink-soft);
 }
 
+/* Remap feedback ("Swapped with Brake.") — small line under the controls list */
+.us-pause__remap-status {
+  margin: 6px 0 0;
+  font-size: var(--text-2xs);
+  color: var(--ink-soft);
+}
+
 /* Mixer fader rows are tighter than setting rows */
 .us-mixer .us-row {
   padding: 3px 0;
