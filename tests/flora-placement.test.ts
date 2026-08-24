@@ -103,7 +103,7 @@ describe('placement determinism (same seed+chunk = identical arrays)', () => {
 });
 
 describe('placement constraints', () => {
-  it('positions stay inside the chunk, species is pine, fields in range', () => {
+  it('positions stay inside the chunk, species is a valid index, fields in range', () => {
     const sampler = new FlatSurfaceSampler(SEED);
     for (const k of [key(0, 0), key(-3, 8), key(50, -50)]) {
       for (const p of treesFor(k, SEED, sampler)) {
@@ -111,11 +111,23 @@ describe('placement constraints', () => {
         expect(p.x).toBeLessThan(128);
         expect(p.z).toBeGreaterThanOrEqual(0);
         expect(p.z).toBeLessThan(128);
-        expect(p.species).toBe(0);
+        // Wave 2 species table: 0 pine, 1 birch, 2 oak, 3 snag.
+        expect([0, 1, 2, 3]).toContain(p.species);
         expect(p.scale).toBeGreaterThan(0.3);
         expect(Math.abs(p.hue)).toBeLessThanOrEqual(0.5);
       }
     }
+  });
+
+  it('species mix: all four species occur across a wide sample', () => {
+    const sampler = new FlatSurfaceSampler(SEED);
+    const seen = new Set<number>();
+    for (let cx = -6; cx <= 6; cx++) {
+      for (let cz = -6; cz <= 6; cz++) {
+        for (const p of treesFor(key(cx, cz), SEED, sampler)) seen.add(p.species);
+      }
+    }
+    for (const s of [0, 1, 2, 3]) expect(seen.has(s)).toBe(true);
   });
 
   it('rejects slopes steeper than MAX_SLOPE without disturbing the rng stream', () => {

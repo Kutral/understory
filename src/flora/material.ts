@@ -110,6 +110,49 @@ export function createPineMaterial(data: THREE.InstancedBufferAttribute): PineMa
   return { material: mat, uniforms };
 }
 
+/**
+ * Wave 2: species-shared material. Same wind graph and bark base as pine,
+ * but the species id rides in the instance payload's phase slot is NOT used
+ * (phase stays a flutter decorrelator); instead each species gets its own
+ * geometry whose baked `aPart`/`aFlex` already differ, plus per-species
+ * foliage palettes blended by the SAME hue channel. One material = one
+ * pipeline; four species still render in four instanced draws per LOD ring
+ * (or fewer when empty), keeping total draw calls under budget.
+ */
+export function createSpeciesMaterial(
+  data: THREE.InstancedBufferAttribute,
+  palette: 'birch' | 'oak',
+): PineMaterial {
+  const mat = new THREE.MeshStandardNodeMaterial();
+  const { offset, uniforms } = windGraph(data);
+
+  const part = attribute<'float'>('aPart', 'float');
+  const dataNode = instancedBufferAttribute<'vec4'>(data, 'vec4');
+  const hue = dataNode.w.mul(0.5).add(0.5); // [-1,1] → [0,1]
+
+  // Birch: near-white paper bark with dark eye-scars suggestion via height
+  // banding; small pale-yellow-green leaves.
+  if (palette === 'birch') {
+    const whiteBark = mix(vec3(0.78, 0.76, 0.7), vec3(0.62, 0.6, 0.55), smoothstep(2, 8, positionLocal.y));
+    const darkBand = smoothstep(0.86, 1.0, sin(positionLocal.y.mul(9)).mul(0.5).add(0.5));
+    const bark = mix(whiteBark, vec3(0.16, 0.15, 0.13), darkBand.mul(0.55));
+    const leavesA = vec3(0.19, 0.24, 0.08);
+    const leavesB = vec3(0.23, 0.28, 0.11);
+    mat.colorNode = mix(bark, mix(leavesA, leavesB, hue), part);
+    mat.roughnessNode = mix(float(0.85), float(0.8), part);
+  } else {
+    // Oak: deeply furrowed grey-brown bark; broad blue-green canopy.
+    const bark = mix(vec3(0.19, 0.15, 0.11), vec3(0.29, 0.23, 0.16), smoothstep(0, 5, positionLocal.y));
+    const leavesA = vec3(0.1, 0.16, 0.06);
+    const leavesB = vec3(0.14, 0.2, 0.09);
+    mat.colorNode = mix(bark, mix(leavesA, leavesB, hue), part);
+    mat.roughnessNode = mix(float(0.98), float(0.85), part);
+  }
+
+  mat.positionNode = positionLocal.add(offset);
+  return { material: mat, uniforms };
+}
+
 /** Crossed-billboard impostor material sampling the pre-rendered canvas. */
 export function createImpostorMaterial(
   map: THREE.Texture | null,

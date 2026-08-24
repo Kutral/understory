@@ -145,11 +145,50 @@ export const MAX_SLOPE = 0.85;
 /** Drier than this is bare ridge/rock pavement: no trees. */
 export const MIN_MOISTURE = 0.18;
 
+// ---- species table (Wave 2) -------------------------------------------------
+//
+// Species indices are part of the placement contract (contracts/flora.ts):
+//   0 = pine, 1 = birch, 2 = oak, 3 = snag.
+// Selection happens AFTER the pine density gate so existing pine forests are
+// byte-identical to Wave 1.5 for the same seed; the species roll consumes a
+// separate RNG stream keyed differently, keeping old arrays stable.
+
+export const SPECIES_BIRCH = 1;
+export const SPECIES_OAK = 2;
+export const SPECIES_SNAG = 3;
+
 /**
- * All pine placements for one chunk, deterministic under (seed, key, sampler).
- * Positions are local to the chunk origin in metres, per the TreePlacement
- * contract. Sorted by candidate-grid order (row-major), never by RNG order,
- * so iteration is stable.
+ * Species selection for one accepted candidate site.
+ * - birch: moist low ground (moisture high), gentle slope.
+ * - oak: gentle slopes in clearings (low local density).
+ * - snag: sparse anywhere (rare everywhere, slightly more on dry margins).
+ * Everything else stays pine.
+ */
+export function pickSpecies(
+  moisture: number,
+  slope: number,
+  density: number,
+  roll: number,
+): number {
+  // Snags: rare everywhere (~4%), more common on drier sites.
+  const snagP = 0.02 + (1 - moisture) * 0.05;
+  if (roll < snagP) return SPECIES_SNAG;
+  // Birch: needs wet feet + easy ground; competes with pine in hollows.
+  if (moisture > 0.62 && slope < 0.35 && roll < 0.42) return SPECIES_BIRCH;
+  // Oak: open clearings, mid moisture, easy slopes.
+  if (density < 0.34 && slope < 0.45 && moisture > 0.3 && roll > 0.72) return SPECIES_OAK;
+  return 0; // pine
+}
+
+/**
+ * All tree placements for one chunk across ALL species, deterministic under
+ * (seed, key, sampler). Positions are local to the chunk origin in metres,
+ * per the TreePlacement contract. Sorted by candidate-grid order (row-major),
+ * never by RNG order, so iteration is stable.
+ *
+ * Compatibility: the pine-acceptance stream is untouched, so pine-only
+ * consumers see the same accept pattern as before; species rolls use a second
+ * mulberry32 seeded from hashChunk ^ 0x5eed_5eed.
  */
 export function treesFor(
   key: ChunkKey,
@@ -157,6 +196,7 @@ export function treesFor(
   sampler: SurfaceSampler,
 ): TreePlacement[] {
   const rng = mulberry32(hashChunk(key.cx, key.cz, seed));
+  const speciesRng = mulberry32((hashChunk(key.cx, key.cz, seed) ^ 0x5eed5eed) >>> 0);
   const ox = key.cx * 128;
   const oz = key.cz * 128;
   const n = Math.ceil(128 / CANDIDATE_SPACING_M);
@@ -172,23 +212,37 @@ export function treesFor(
         (iz + 0.5) * CANDIDATE_SPACING_M + (rng() - 0.5) * CANDIDATE_SPACING_M * 0.9));
 
       // Cheapest gate first: pure density mask, no terrain sampling.
-      const acceptP = forestDensity(x, z, seed) * 0.92;
+      const density = forestDensity(x, z, seed);
+      const acceptP = density * 0.92;
       if (rng() >= acceptP) continue;
 
       // Terrain gates (injected sampler).
       const lx = x - ox;
       const lz = z - oz;
-      if (sampler.gradientMag(x, z) > MAX_SLOPE) continue;
+      const slope = sampler.gradientMag(x, z);
+      if (slope > MAX_SLOPE) continue;
       const moisture = sampler.moistureAt(x, z);
       if (moisture < MIN_MOISTURE) continue;
 
       // Wet hollows grow bigger trees; dry margins stunted ones.
       const vigor = 0.8 + moisture * 0.4;
+
+      // Species roll (separate stream; pine default keeps old behaviour).
+      const species = pickSpecies(moisture, slope, density, speciesRng());
+
+      // Birch runs slimmer and shorter; oak broader but similar height;
+      // snags lean dead at reduced size. Scale multiplies the species'
+      // own base geometry (species-geometry.ts).
+      let scaleMul = 1;
+      if (species === SPECIES_BIRCH) scaleMul = 0.85 + speciesRng() * 0.15;
+      else if (species === SPECIES_OAK) scaleMul = 0.95 + speciesRng() * 0.2;
+      else if (species === SPECIES_SNAG) scaleMul = 0.6 + speciesRng() * 0.25;
+
       out.push({
         x: lx,
         z: lz,
-        species: 0, // pine
-        scale: (0.75 + rng() * 0.5) * vigor,
+        species,
+        scale: (0.75 + rng() * 0.5) * vigor * scaleMul,
         rotY: rng() * Math.PI * 2,
         hue: (rng() * 2 - 1) * 0.5,
       });
