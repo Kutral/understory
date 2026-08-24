@@ -16,6 +16,7 @@ import { TerrainWorld } from './world/terrain-world';
 import { SoftVehicle } from './vehicle/vehicle';
 import { InputSystemImpl } from './vehicle/input';
 import { createSkySystem, type AttachedSkySystem } from './sky/index';
+import { ChaseCameraRig } from './camera/rig';
 import { UnderstoryUi } from './ui/shell';
 import { createAudioBus } from './audio/audio';
 
@@ -146,9 +147,7 @@ async function boot(): Promise<void> {
   const dbg = debugEnabled() ? new DebugHud() : null;
 
   // --- the loop ---------------------------------------------------------------
-  const chaseTarget = new THREE.Object3D();
-  scene.add(chaseTarget);
-  camera.position.set(0, 4, -9);
+  const rig = new ChaseCameraRig(camera);
 
   const loop = new GameLoop(
     () => {
@@ -160,6 +159,11 @@ async function boot(): Promise<void> {
       const t = vehicle.transform;
       world.update(t.px, t.pz);
       world.syncColliders(t.px, t.pz);
+      // 3.5 camera rig target update
+      rig.fixedUpdate(1 / 60, t.px, t.py, t.pz);
+      rig.setTargetOrientation(t.qx, t.qy, t.qz, t.qw);
+      const lv = vehicle.chassisBody?.linvel();
+      if (lv) rig.setTargetVelocity(lv.x, lv.y, lv.z);
       // 5. sky
       sky.fixedUpdate(1 / 60);
       // 7. audio params (no allocation)
@@ -174,15 +178,7 @@ async function boot(): Promise<void> {
       ui.setTimeOfDay(sky.getSnapshot().timeOfDay);
     },
     (_alpha) => {
-      // interpolate the chassis transform between last two ticks
-      const t = vehicle.transform;
-      chaseTarget.position.set(t.px, t.py, t.pz);
-      chaseTarget.quaternion.set(t.qx, t.qy, t.qz, t.qw);
-      // simple calm chase cam (rig agent upgrades in Wave 1.5 slice)
-      const behind = chaseTarget.position.clone();
-      const back = new THREE.Vector3(0, 2.6, -7.5).applyQuaternion(chaseTarget.quaternion);
-      camera.position.lerp(behind.add(back), 0.08);
-      camera.lookAt(chaseTarget.position.x, chaseTarget.position.y + 1.2, chaseTarget.position.z);
+      rig.render(_alpha);
       sky.applyVisuals(camera);
 
       quality.observeFrame(loop.frameMs);
