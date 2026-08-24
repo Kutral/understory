@@ -66,6 +66,23 @@
   display: block;
 }
 
+/* Blank-plate invitation (art-pass obs. 3): quiet typewritten note centred
+   on the paper until the journey inks a line. */
+.us-plate__empty {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 32px;
+  font-family: var(--font-data), monospace;
+  font-size: 12px;
+  letter-spacing: 0.05em;
+  color: var(--lichen);
+  text-align: center;
+  pointer-events: none;
+}
+
 .us-plate__hatch line {
   stroke: var(--moss);
   stroke-width: 0.7;
