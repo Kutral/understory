@@ -7,6 +7,7 @@ import './styles/opening.css';
 import './styles/pause.css';
 import './styles/trace.css';
 import './styles/photo.css';
+import './styles/a11y.css';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three/webgpu';
 import { CHUNK_RINGS } from '@contracts/constants';

@@ -1,0 +1,32 @@
+/* Accessibility: media-query degradations + contrast raises (a11y pass). */
+
+/* Reduced motion: kill every animation/transition globally. The JS-side
+   reduced-motion setting also empties particle pools and freezes the rig;
+   this catches everything CSS-driven regardless of the toggle. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Higher contrast: strengthen text and keylines without leaving the
+   palette (no new hues — just opacity/full-strength tokens). */
+@media (prefers-contrast: more) {
+  :root {
+    --birch-90: var(--birch);
+    --birch-70: var(--birch);
+    --lichen: #b4c4aa;
+  }
+  .us-btn {
+    border-color: var(--birch);
+  }
+  .us-plate__hatch line,
+  .us-photo__guides {
+    opacity: 0.55;
+  }
+}
