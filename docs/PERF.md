@@ -112,3 +112,35 @@ Backend: `[understory] backend: webgl2; tone mapping: AgX` · drive: ?autopilot=
 
 Raw telemetry retained at `e2e/results/<mode>-raw.json` (untracked).
 
+
+---
+
+## Addendum — warmup fix iteration (post-baseline, commit 3136bc9)
+
+The compiles FAIL leg got a fix attempt: a boot-time warmup pass in `src/main.ts`
+pumps the chunk streamer until the **full desired set (81 = (2·5−1)² chunks, all LOD
+steps)** is live, then awaits `renderer.compileAsync(scene, camera)` — all before the
+`[understory] booted` marker. Verified with the same collector on 60 s drives
+(`PERF_DRIVE_MS=60000`, evidence at `e2e/results/warmup-verify-unthrottled*.json`):
+
+| | baseline (no warmup) | warmup pass |
+|---|---|---|
+| Post-load shader compiles | 12 | **3** |
+| Program links pre-boot marker | 0 | 7 of 10 |
+| Warmup coverage at marker | 0 chunks live | 81/81 chunks, all pipelines |
+
+**Residual 3 links, precisely attributed as far as this environment allows:** they fire
+at ~+78 ms, ~+3.3 s and ~+3.4 s after boot starts driving, in *both* warmup variants
+(25-chunk and full-81-chunk coverage), i.e. they are independent of terrain LOD/pool
+coverage. They coincide with the first fixed ticks, which is when sky drift begins
+mutating light state and lazily-touched scene state changes; the likely source is
+sky/light-state material variants that only link when first activated (e.g.
+dawn→day transitions), or another subsystem adding scene objects on early ticks.
+Identifying them exactly requires per-material pipeline attribution inside
+three's WebGPURenderer backend (not exposed via `renderer.info`) — handed to the
+sky/render-core owners with this timing fingerprint. The gate remains **FAIL**
+(3 > 0) but is now a bounded, named residual rather than streaming-wide linking.
+
+Also noted: `first interactive` remains NOT-MEASURED under SwiftShader (cadence never
+stabilises); CPU-sim proxy improved to median 7.5 ms sim / 8.6 ms render-submit in the
+warmup verification run.
