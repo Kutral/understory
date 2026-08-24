@@ -305,7 +305,10 @@ export class UnderstoryUi implements UiSystem {
     for (const ch of Object.keys(next.volumes) as AudioChannel[]) {
       if (next.volumes[ch] !== prev.volumes[ch]) this.hooks.onVolumeChange(ch, next.volumes[ch]!);
     }
-    if (next.reducedMotion !== prev.reducedMotion) this.reducedMotionSig.set(next.reducedMotion);
+    if (next.reducedMotion !== prev.reducedMotion) {
+      this.reducedMotionSig.set(next.reducedMotion);
+      this.hooks.onReducedMotionChange(next.reducedMotion);
+    }
     if (next.horizonLock !== prev.horizonLock) this.hooks.onHorizonLockChange(next.horizonLock);
   }
 }
