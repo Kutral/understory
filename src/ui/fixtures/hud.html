@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Understory — fixture: driving HUD</title>
+    <link rel="stylesheet" href="/src/styles/fonts.css" />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/shell.css" />
+    <link rel="stylesheet" href="/src/styles/opening.css" />
+    <link rel="stylesheet" href="/src/styles/hud.css" />
+    <link rel="stylesheet" href="/src/styles/pause.css" />
+    <style>
+      body { margin: 0; height: 100vh; overflow: hidden;
+        background:
+          radial-gradient(90% 50% at 30% 90%, #101a16 0%, transparent 65%),
+          linear-gradient(180deg, #7c9aa6 0%, #93a88c 52%, #2f4234 82%, #101a16 100%);
+      }
+      #ui { position: fixed; inset: 0; }
+    </style>
+  </head>
+  <body>
+    <main style="position: fixed; inset: 0">
+    <div id="ui"></div>
+    </main>
+    <script type="module">
+      import { createUi } from '/src/ui/shell.ts';
+      const ui = createUi();
+      ui.mount(document.querySelector('#ui'), {
+        tier: 'high', dprScale: 1, fovDeg: 62, bloom: true, dof: true,
+        grain: true, godRays: true, reducedMotion: false,
+      });
+      window.__ui = ui;
+      // skip the opening: any key starts driving
+      window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyW' }));
+      // telemetry as vehicle/sky would feed it; input activity keeps the HUD up
+      ui.setSpeed(34);
+      ui.setTimeOfDay(0.32); // mid-morning sun on the arc
+      window.__pin = setInterval(() => ui.playerInput(), 300);
+    </script>
+  </body>
+</html>
