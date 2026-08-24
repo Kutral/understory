@@ -190,3 +190,15 @@ wired path. **Re-run this collector after flora wiring lands** — it is a singl
 pnpm build && pnpm e2e            # runs e2e/perf.spec.ts (~16 min: 2 × 3-min drive)
 node scripts/perf-report.mjs > docs/PERF.md
 ```
+
+## Warmup fix iteration (commits 1ab953f, 3136bc9, c19fb94)
+
+Orchestrator requested a fix attempt for the compiles FAIL. Applied in `src/main.ts`
+(permission granted to edit directly): boot-time warmup pumping the streamer to the
+full desired set (81 chunks) + `renderer.compileAsync(scene, camera)` before the boot
+marker. Result: post-load compiles **12 → 3** on a 60 s verification drive. The
+residual 3 fire within ~3.4 s of drive start in both warmup variants — independent of
+terrain coverage — and are attributed (by timing fingerprint) to non-terrain lazy
+material variants, most likely sky/light-state; handed to sky/render-core owners.
+Full evidence: `docs/PERF.md` addendum + `e2e/results/warmup-verify-*`. Collector
+now supports `PERF_DRIVE_MS` env override for short verification drives.
