@@ -1,0 +1,117 @@
+/* The Trace — paper plate view (ART-DIRECTION §6.4). */
+.us-plate {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: color-mix(in srgb, var(--spruce) 72%, transparent);
+  backdrop-filter: blur(2px);
+  animation: us-plate-in 420ms ease-out both;
+}
+.us-plate[data-reduced-motion='true'] {
+  animation: none;
+}
+@keyframes us-plate-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.us-plate__header {
+  display: flex;
+  gap: 18px;
+  align-items: baseline;
+  font-family: var(--font-data), monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  color: var(--birch);
+  text-transform: uppercase;
+}
+.us-plate__title {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--birch);
+}
+
+.us-plate__paper {
+  position: relative;
+  width: min(78vmin, 640px);
+  aspect-ratio: 1;
+  border-radius: 3px;
+  padding: 10px;
+  background:
+    /* soft fold shadows — two creases crossing the plate */
+    linear-gradient(103deg, transparent 46%, rgba(16, 26, 22, 0.07) 49%, transparent 52%),
+    linear-gradient(17deg, transparent 30%, rgba(16, 26, 22, 0.05) 33%, transparent 36%),
+    /* paper grain via layered gradients, no assets */
+    radial-gradient(circle at 30% 20%, rgba(47, 66, 52, 0.05), transparent 40%),
+    radial-gradient(circle at 75% 70%, rgba(47, 66, 52, 0.06), transparent 45%),
+    linear-gradient(180deg, #e9e0cb 0%, var(--birch) 55%, #ddd2b9 100%);
+  box-shadow:
+    0 1px 0 rgba(230, 220, 198, 0.15) inset,
+    0 18px 50px rgba(6, 10, 8, 0.55),
+    0 4px 14px rgba(6, 10, 8, 0.4);
+}
+
+.us-plate__svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.us-plate__hatch line {
+  stroke: var(--moss);
+  stroke-width: 0.7;
+  opacity: 0.28;
+}
+.us-plate__ink {
+  fill: none;
+  stroke: #2c3555; /* iron-gall ink: near-black with blue cast */
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.9;
+  filter: url(#us-ink-roughen);
+}
+.us-plate[data-reduced-motion='true'] .us-plate__ink,
+.us-plate__ink {
+  stroke-dasharray: none;
+}
+@keyframes us-ink-draw {
+  to { stroke-dashoffset: 0; }
+}
+.us-plate:not([data-reduced-motion='true']) .us-plate__ink {
+  stroke-dasharray: 24000;
+  stroke-dashoffset: 24000;
+  animation: us-ink-draw 1600ms ease-out 120ms forwards;
+}
+
+.us-plate__pool {
+  fill: #232b47;
+}
+.us-plate__specimen line {
+  stroke: #4a5a43;
+  stroke-width: 1;
+  stroke-linecap: round;
+}
+
+.us-plate__footer {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  font-family: var(--font-ui), sans-serif;
+  font-size: 13px;
+  color: var(--lichen);
+}
+.us-plate__footer kbd {
+  font-family: var(--font-data), monospace;
+  border: 1px solid var(--lichen);
+  border-radius: 4px;
+  padding: 0 5px;
+}

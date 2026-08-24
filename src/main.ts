@@ -5,6 +5,8 @@ import './styles/shell.css';
 import './styles/hud.css';
 import './styles/opening.css';
 import './styles/pause.css';
+import './styles/trace.css';
+import './styles/photo.css';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three/webgpu';
 import { CHUNK_RINGS } from '@contracts/constants';
@@ -20,6 +22,9 @@ import { createSkySystem, type AttachedSkySystem } from './sky/index';
 import { ChaseCameraRig } from './camera/rig';
 import { UnderstoryUi } from './ui/shell';
 import { createAudioBus } from './audio/audio';
+import { TraceRecorder, formatClock } from './ui/trace-store';
+import { createTracePlate } from './ui/trace-plate';
+import { createPhotoMode } from './ui/photo-mode';
 
 /**
  * Boot order follows the frame contract (src/contracts/frame.ts):
@@ -150,6 +155,76 @@ async function boot(): Promise<void> {
   // --- the loop ---------------------------------------------------------------
   const rig = new ChaseCameraRig(camera);
 
+  // --- The Trace (signature) + photo mode -------------------------------------
+  const SEED = 2026;
+  const trace = new TraceRecorder(window.localStorage, (x, z) => world.heightAt(x, z));
+  trace.beginSeed(SEED);
+  let sessionT = 0;
+  let plateEl: HTMLElement | null = null;
+
+  function openPlate(): void {
+    if (plateEl) return;
+    const snap = sky.getSnapshot();
+    const handle = createTracePlate(
+      {
+        seed: SEED,
+        distanceM: trace.distanceM(),
+        timeOfDay: formatClock(snap.timeOfDay * 24 * 60 / 60),
+        weather: snap.weather,
+        points: trace.exportForPlate().points,
+        heights: trace.exportForPlate().heights,
+        marks: trace.exportForPlate().marks,
+      },
+      { onClose: () => { plateEl = null; }, reducedMotion: ui.settings.reducedMotion },
+    );
+    plateEl = handle.root;
+    document.body.append(handle.root);
+    const btn = handle.root.querySelector<HTMLButtonElement>('.us-plate__close');
+    btn?.focus();
+  }
+
+  const photo = createPhotoMode(rig, () => ({
+    seed: SEED,
+    distanceM: trace.distanceM(),
+    timeOfDay: formatClock(sky.getSnapshot().timeOfDay * 24),
+    weather: sky.getSnapshot().weather,
+  }), async () => {
+    // PNG export at 2x: render once at doubled pixel ratio, capture, restore.
+    const pr = render.renderer.getPixelRatio();
+    const size = new THREE.Vector2();
+    render.renderer.getSize(size);
+    try {
+      render.renderer.setPixelRatio(pr * 2);
+      render.renderer.render(scene, camera);
+      const src = render.renderer.domElement;
+      const out = document.createElement('canvas');
+      out.width = src.width;
+      out.height = src.height;
+      const ctx = out.getContext('2d');
+      if (!ctx) return;
+      ctx.drawImage(src, 0, 0);
+      const a = document.createElement('a');
+      a.download = `understory-plate-${SEED}-${Date.now()}.png`;
+      a.href = out.toDataURL('image/png');
+      a.click();
+    } finally {
+      render.renderer.setPixelRatio(pr);
+      render.renderer.setSize(size.x, size.y);
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (e.repeat || e.metaKey || e.ctrlKey) return;
+    if (plateEl) return; // the plate handles its own close keys
+    if (e.code === 'KeyM') {
+      e.preventDefault();
+      openPlate();
+    } else if (e.code === 'KeyP') {
+      e.preventDefault();
+      photo.toggle();
+    }
+  });
+
   const loop = new GameLoop(
     () => {
       // 1. input
@@ -165,6 +240,9 @@ async function boot(): Promise<void> {
       rig.setTargetOrientation(t.qx, t.qy, t.qz, t.qw);
       const lv = vehicle.chassisBody?.linvel();
       if (lv) rig.setTargetVelocity(lv.x, lv.y, lv.z);
+      // 3.6 The Trace recorder (decimated internally; saves are throttled)
+      sessionT += 1 / 60;
+      trace.record(t.px, t.pz, sessionT, Math.abs(vehicle.state.speedMs));
       // 5. sky
       sky.fixedUpdate(1 / 60);
       // 7. audio params (no allocation)
@@ -180,6 +258,7 @@ async function boot(): Promise<void> {
     },
     (_alpha) => {
       rig.render(_alpha);
+      photo.update(1 / 60);
       sky.applyVisuals(camera);
 
       quality.observeFrame(loop.frameMs);

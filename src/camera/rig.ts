@@ -53,7 +53,6 @@ export class ChaseCameraRig implements CameraRig {
 
   render(_alpha: number): void {
     if (!this.photoMode) {
-      // Desired position: behind and above the car in car-local space.
       const back = new THREE.Vector3(0, 2.6, -7.5).applyQuaternion(this.targetQuat);
       this.desiredPos.copy(this.targetPos).add(back);
 
@@ -70,6 +69,8 @@ export class ChaseCameraRig implements CameraRig {
       } else {
         this.cam.lookAt(this.lookAt);
       }
+    } else {
+      this.renderPhoto();
     }
   }
 
@@ -90,6 +91,52 @@ export class ChaseCameraRig implements CameraRig {
 
   setPhotoMode(on: boolean): void {
     this.photoMode = on;
+  }
+
+  private photoYaw = 0.6;
+  private photoPitch = 0.32;
+  private photoDistScale = 1;
+  private requestLevel = false;
+
+  /** Orbit angles from the photo-mode overlay (radians). */
+  setPhotoOrbit(yaw: number, pitch: number): void {
+    this.photoYaw = yaw;
+    this.photoPitch = pitch;
+  }
+
+  setPhotoZoom(scale: number): void {
+    this.photoDistScale = scale;
+  }
+
+  photoZoom(): number {
+    return this.photoDistScale;
+  }
+
+  /** One-shot: re-level the horizon on the next photo frame. */
+  setPhotoLevel(_on: boolean): void {
+    this.requestLevel = true;
+  }
+
+  private renderPhoto(): void {
+    // Slow orbit around the car; distance scales with zoom.
+    const dist = 9 * this.photoDistScale;
+    const cx = Math.cos(this.photoPitch) * Math.sin(this.photoYaw) * dist;
+    const cz = Math.cos(this.photoPitch) * Math.cos(this.photoYaw) * dist;
+    const cy = Math.sin(this.photoPitch) * dist + 1.4;
+    this.camera.position.set(
+      this.targetPos.x + cx,
+      Math.max(this.targetPos.y + cy, this.targetPos.y + 0.8),
+      this.targetPos.z + cz,
+    );
+    this.lookAt.copy(this.targetPos);
+    this.lookAt.y += 1.1;
+    this.cam.lookAt(this.lookAt);
+    if (this.requestLevel) {
+      const e = new THREE.Euler().setFromQuaternion(this.cam.quaternion, 'YXZ');
+      e.z = 0;
+      this.cam.quaternion.setFromEuler(e);
+      this.requestLevel = false;
+    }
   }
 
   setHorizonLock(on: boolean): void {

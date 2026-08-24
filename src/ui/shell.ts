@@ -79,7 +79,7 @@ export class UnderstoryUi implements UiSystem {
   );
 
   private readonly idle = new HudIdleTimer(undefined, performanceClock);
-  private settings: UiSettings = structuredClone(DEFAULT_SETTINGS);
+  settings: UiSettings = structuredClone(DEFAULT_SETTINGS);
   private bindings: KeyBinding[] = DEFAULT_BINDINGS.map((b) => ({ ...b }));
 
   private rootEl: HTMLElement | null = null;
