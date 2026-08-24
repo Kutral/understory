@@ -12,5 +12,9 @@ export default defineConfig({
     environment: 'node',
     include: ['tests/**/*.test.ts'],
     coverage: { enabled: false },
+    // Perf-gate tests measure wall-clock ms; parallel file execution makes
+    // them flaky by contention (a regression and a busy scheduler look
+    // identical). Sequential costs ~4s extra and buys deterministic gates.
+    fileParallelism: false,
   },
 });
