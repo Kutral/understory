@@ -54,3 +54,21 @@ Owner decision; not applied here to respect directory ownership.
 3. **Empty states are silent** — trace plate with no points should show a
    quiet typewritten invitation ("The plate is blank. Drive, and the line
    will come.") rather than an empty paper. Scheduled with qa-suite work.
+
+## Pass 2 — the three observations above, executed on feat/art2
+
+1. **Panel headers** — done. Before: `.us-pause__title` was plain
+   left-aligned display type. After: thin double rule under the title drawn
+   by its own border (`border-bottom: 3px double` in a translucent moss
+   mix), no new markup; the hint stays baseline-aligned beside it.
+2. **Slider tracks** — done. Before: flat `--moss` runnable/moz tracks.
+   After: an engraved tick every 10% via one `repeating-linear-gradient`
+   layered over the moss ground, applied identically to the webkit and moz
+   track pseudo-elements; thumb untouched.
+3. **Empty trace plate** — done. Before: silent blank paper when
+   `points.length === 0`. After: `trace-plate.ts` renders
+   `<p class="us-plate__empty">The plate is blank. Drive, and the line will
+   come.</p>` centred over the paper; styled in trace.css (Martian Mono,
+   small, `--lichen`). No vitest case added — the change introduces no pure
+   logic (DOM/CSS only), per pass rules; single end-of-pass `pnpm verify`.
+
