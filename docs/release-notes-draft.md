@@ -1,90 +1,104 @@
-# Release notes — DRAFT
+# Release notes — v0.1.0 DRAFT
 
-> ⚠️ **DRAFT** — written by agent L2 (`feat/docs-deploy`) as a pre-alpha status
-> snapshot for orchestrator review ahead of Wave 4. Every claim below is backed
-> by a measurement or artifact cited in `docs/notes/*.md`. Nothing here is final
-> copy; do not publish without re-verifying after Wave 1.5/2 land.
+> ⚠️ **PRE-ALPHA — honest snapshot, not marketing copy.** Do not publish without
+> re-verifying. Every claim below is backed by a measurement or artifact cited in
+> [`docs/PERF.md`](PERF.md) or `docs/notes/*.md`. Rendered verification to date ran
+> on the WebGL2 fallback under headless Chromium (SwiftShader) unless noted —
+> see PERF.md for why that caveat matters.
 
-**Version:** 0.1.0 (unreleased) · **Branch state:** `main` integrated & green at
+**Version:** 0.1.0 · **State:** `main` integrated and green (256 unit tests) at
 time of writing.
 
-## What works today (verified)
+## What works
 
-- **Fixed-timestep engine core** — 60 Hz accumulator loop per
-  `contracts/frame.ts`, interpolation alpha, zero-allocation phases, MAX_TICKS
-  guard; empty scene holds **60 fps @1080p** (vsync-capped, WebGL2 backend) with
-  a flat **9.5 MB JS heap over ~64 s** (`docs/notes/render-core.md`). WebGPU is
-  the primary backend with retry-on-failure WebGL2 fallback and AgX tone mapping;
-  headless CI has no WebGPU, so WebGPU-side claims are NOT proven yet.
-- **Endless deterministic forest streaming** — seeded simplex FBM + domain warp
-  heightfield, warped-spline trail network on a 192 m supergrid, five Chebyshev
-  LOD rings (~640 m guarantee) with pooled geometry recycling, worker-pool
-  generation using transferables. Byte-identical heightmaps for a given seed
-  (unit test). Chunk generation **p50 ≈ 42–45 ms** off-thread, trail carve via
-  spatial hash ≈ 42 ms vs ~330 ms naive (~7.9×), main-thread fill ≤ ~5 ms
-  (`docs/notes/world-terrain.md`).
-- **Soft Rapier raycast vehicle** — never flips in scripted testing (worst tilt
-  9.3° over a 40 s bumpy run), recover rights a 170° tip to 24.6° in 3 s, top
-  speed plateaus ~73 km/h under the 85 km/h cap, lift-off coast stops from
-  53 km/h in 9.7 s without touching the brake. Timestep independence verified:
-  bit-identical steering traces at 30 vs 144 fps render rates
+### Engine core
+
+- Fixed-timestep 60 Hz accumulator loop (`src/contracts/frame.ts`) with
+  interpolation alpha, zero-allocation phases and a MAX_TICKS guard; empty scene
+  holds 60 fps @1080p with a flat heap (`docs/notes/render-core.md`).
+- WebGPU-first renderer with retry-on-failure WebGL2 fallback and AgX tone
+  mapping. WebGPU itself remains unproven (headless CI has no WebGPU).
+
+### World
+
+- Endless deterministic forest: seeded simplex FBM + domain-warped heightfield,
+  warped-spline trail network on a 192 m supergrid, five Chebyshev LOD rings
+  (~640 m guaranteed radius) with pooled geometry recycling, worker-pool
+  generation using transferables. Same seed → byte-identical heightmaps
+  (unit-tested). Chunk generation p50 ≈ 42–45 ms off-thread; trail carve via
+  spatial hash ~42 ms vs ~330 ms naive (~7.9×) (`docs/notes/world-terrain.md`).
+
+### Driving
+
+- Soft Rapier raycast vehicle: never flips in scripted testing, recover rights a
+  170° tip in ~3 s, top speed plateaus ~73 km/h under the cap, timestep
+  independence proven with bit-identical steering traces at 30 vs 144 fps
   (`docs/notes/vehicle-input.md`).
-- **Input stack** — remappable keyboard (WASD+arrows+Space+R, persisted),
-  standard-mapping analog gamepad with 0.14 deadzone, touch overlay
-  (steer arc / throttle-brake pad / Recover button); sources combine safely
-  (recover edge-latched).
-- **Sky & weather** — analytic sky model, 40-min day cycle, weather crossfade
-  machine (30–60 s fades, continuous under retarget), clouds via curl-noise
-  domain warp, exponential height fog, single texel-snapped sun/moon shadow rig.
-  Ten fixed-seed lighting states screenshot-verified 10/10
-  (`docs/notes/sky-atmosphere-shots/`). No cascade pop: intensity steps at band
-  edges < 1e-4.
-- **Fully synthesised audio** — zero shipped audio assets; engine/tyre/
-  ambience/music/wind rigs plus automated one-shot voices on an **immutable**
-  graph: node count stays exactly 70 across a simulated 10-minute session,
-  update cost ≈ 1.65 µs/call, worst-case mix headroom −15.6 dBFS
-  (`docs/notes/audio.md`).
-- **UI shell** — opening line, diegetic enamel speed dial that self-hides after
-  4 s idle, birch-paper pause/settings panel (graphics tier, six-channel sound
-  faders + Silence preset, key remapping, reduced motion, horizon lock, seed
-  entry). Keyboard-only operable; axe-core: **0 violations** on opening and
-  pause fixtures; UI flush cost < 0.5 ms/frame steady-state
-  (`docs/notes/ui-shell.md`, fixtures in `src/ui/fixtures/screens/`).
-- **CI + Pages deploy** (this branch) — `pnpm verify` gate, Playwright chromium
-  e2e step, GitHub Pages publishing of the `/understory/`-based build on `main`.
+- Input stack: remappable persisted keyboard, standard-mapping analog gamepad
+  (0.14 smoothstep deadzone), touch overlay; sources combine safely and Recover
+  is edge-latched. Remap collisions resolve by swap + explain.
 
-## What is NOT finished (honest list)
+### Forest life & modes (new since the Wave 2 stubs)
 
-- **No trees.** Flora (agent G) is a Wave 2 stub: density-query phase runs but
-  renders nothing; there are no trunk colliders yet either. The forest is terrain,
-  trails, sky, fog — not vegetation.
-- **No particles, wildlife, rain rendering, or post effects** beyond tone mapping
-  (agent H, Wave 2). Sky supplies the rain signal only.
-- **Placeholder car model** — clearly-marked procedural stand-in chassis with
-  cylinder wheels; the estate wagon is future art work.
-- **Wave 1.5 performance gate unmeasured** — p99 ≤ 20 ms over a 3-minute drive
-  and zero post-load shader compiles have NOT been demonstrated end-to-end; the
-  gate blocks Wave 2 and is in flight.
-- **Gamepad and touch paths are code-reviewed and unit-tested in their pure math
-  only** — no physical device passes have happened.
-- **e2e suite is empty.** `playwright.config.ts` and CI plumbing exist (this
-  branch); actual specs belong to agent L and haven't landed. CI uses
-  `--pass-with-no-tests` until they do.
-- **WebGPU backend unverified** — all rendered verification so far ran on the
-  WebGL2 fallback (headless environments lack WebGPU).
-- **Audio needs human ears** — graph-level guarantees hold; timbre/balance of the
-  synthesised engine, tyres, birdsong and music pads are unverified by listening.
-- **The Trace / photo mode** (agent I) and **quality-tier feature flags** (agent
-  J) don't exist yet; settings expose hooks only.
-- **Deploy base path assumption**: `vite.config.ts` pins `base '/understory/'`
-  matching a repo *named `understory`*; no `origin` remote exists in this working
-  copy to confirm the real repo name (see ADR 0003).
+- **Trees** — four species placed deterministically: pine everywhere its density
+  gate accepts, birch on moist low ground, oak on gentle clearing slopes, snags
+  rare on dry margins (`src/flora/placement.ts`).
+- **Life & particles** — pooled rain, fireflies, dust motes, falling leaves and
+  birds, driven by sky/weather state, with a reduced-motion kill switch wired
+  from the settings toggle through to the fx systems and camera rig.
+- **The Trace** — press <kbd>M</kbd> for the plate view of the trail you've drawn.
+- **Photo mode** — press <kbd>P</kbd> to pause the world and export a 2× PNG.
 
-## Known rough edges
+### Sky, atmosphere & UI
 
-- Debug overlay instance count reports 0 honestly until instanced meshes wire it
-  (`renderer.info.instances` doesn't exist in three r185).
-- Collider sync relies on the streamer's LRU cache; if it races far ahead of
-  streaming a chunk is briefly non-collidable and retried next tick.
-- Audio's sky→audio bridge (`setSky()`) sits outside the current AudioBus
-  contract pending an orchestrator decision.
+- Analytic sky model, 40-minute day cycle, weather crossfades (30–60 s fades),
+  curl-noise clouds, exponential height fog, texel-snapped sun/moon shadows;
+  ten fixed-seed lighting states verified 10/10 against reference shots
+  (`docs/notes/sky-atmosphere-shots/`).
+- Fully synthesised soundscape (zero shipped audio assets) on an immutable node
+  graph: node count stable at exactly 70 across a simulated 10-minute session,
+  ≈1.65 µs/update (`docs/notes/audio.md`).
+- UI shell: opening line, diegetic enamel speed dial, birch-paper pause/settings
+  panel (graphics tier, six-channel faders + Silence preset, key remapping,
+  reduced motion, horizon lock, seed entry). Keyboard-only operable; axe-core
+  reports 0 violations on opening and pause fixtures; `prefers-reduced-motion`
+  and `prefers-contrast` CSS honoured (`docs/notes/ui-shell.md`).
+
+### Measured performance ([docs/PERF.md](PERF.md) — headless WebGL2/SwiftShader)
+
+Frame times from this environment are a CPU-side proxy, NOT
+iGPU-representative; the counts below are valid measurements from 3-minute
+autopilot drives (unthrottled + 4× CPU-throttled):
+
+- Draw calls ≤ **36** observed at peak (medians 11–19).
+- JS heap flat: **+0.0%** over 180 s in both runs (17.4 MB and 19.6 MB).
+- Boot → first interactive ≈ **1.0 s** (unthrottled run).
+- Post-load shader compiles cut **12 → 3** by a boot-time warmup pass (pumps all
+  81 chunks, then `compileAsync`, before the booted marker); the residual 3 are
+  attributed to early-tick sky/light-state variants (PERF.md addendum).
+- Playwright e2e specs (boot/input/trace) run against `pnpm preview` in CI.
+
+## What is not finished
+
+- **Species render wiring merge** — birch/oak/snag each render through their own
+  separately-wired path next to the original pine pipeline; one merged pipeline
+  (shared materials, unified draw-call budget) is pending.
+- **Residual post-load shader compiles** — 3 remain against the gate's target of
+  0. Bounded and named (sky/light variants firing on the first fixed ticks), not
+  yet eliminated.
+- **Real-GPU frame gate** — p99 ≤ 20 ms over a 3-minute drive is NOT-MEASURED:
+  SwiftShader cannot produce representative frame times. An iGPU hardware run is
+  required before this gate can honestly pass or fail.
+- **Undergrowth/grass** — the forest floor has trails and leaf-fall but no ground
+  vegetation layer; meadows read bare up close.
+- **Audio spatial upgrades** — the graph is stable but the mix is essentially
+  static-stereo: no listener-relative positioning or occlusion yet, and timbre/
+  balance remain unverified by human ears.
+- Placeholder procedural car chassis (cylinder wheels); the estate wagon is
+  future art work.
+- Gamepad and touch paths are unit-tested in their pure math only — no physical
+  device passes have happened.
+- WebGPU backend unverified end-to-end (all rendered verification used WebGL2).
+- Quality-tier feature flags expose settings hooks only.
+- Deploy base path `/understory/` matches a repo *named* `understory`; no
+  `origin` exists here to confirm (documented assumption, ADR 0003).

@@ -17,10 +17,25 @@ terrain in a pooled worker pool so streaming never spikes the frame budget.
 **Work in progress — pre-alpha (`v0.1.0`).** The engine core is real and measured
 (see [docs/architecture.md](docs/architecture.md) and
 [docs/release-notes-draft.md](docs/release-notes-draft.md) for exactly what works
-and what does not yet): terrain streaming, vehicle physics, sky/weather, audio,
-and UI shell are implemented and unit-tested; flora rendering, particles, photo
-mode and quality tiers are still ahead (Wave 2). The screenshot above is from the
-current integrated boot on a dev machine, not final art.
+and what does not yet): terrain streaming, vehicle physics, sky/weather, audio
+and UI shell are implemented and unit-tested, and a first pass of forest life has
+landed on top:
+
+- **The Trace** — <kbd>M</kbd> opens the plate view of the trail you've driven.
+- **Photo mode** — <kbd>P</kbd> pauses the world and exports a 2× PNG.
+- **Trees** — four species placed by the deterministic flora pass (pine, plus
+  birch/oak/snag whose rendering is still wired separately).
+- **Life & particles** — pooled rain, fireflies, motes, leaves and birds, with a
+  reduced-motion kill switch wired through settings to the fx systems and rig.
+- **Accessibility** — key-remap collision logic (swap + explain) and
+  `prefers-reduced-motion` / `prefers-contrast` CSS support landed.
+
+Still ahead, honestly: merging the per-species render wiring into one pipeline,
+clearing the last residual post-load shader compiles, running the frame gate on
+real GPU hardware (current measurements are headless software-rasteriser
+proxies — see [docs/PERF.md](docs/PERF.md)), undergrowth/grass, and audio
+spatialisation upgrades. The screenshots above are from the current integrated
+boot on a dev machine, not final art.
 
 | | |
 |---|---|
