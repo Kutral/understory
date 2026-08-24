@@ -16,6 +16,7 @@
     "lint": "eslint .",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"e2e/**/*.ts\"",
     "test": "vitest run",
+    "test:e2e": "playwright test",
     "test:watch": "vitest",
     "e2e": "playwright test",
     "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm build"
