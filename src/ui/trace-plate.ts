@@ -116,6 +116,16 @@ export function createTracePlate(data: PlateData, opts: TracePlateOptions): { ro
       .join('');
 
   paper.append(svg);
+
+  // Empty state (art-pass obs. 3): a quiet typewritten invitation instead of
+  // silent blank paper.
+  if (data.points.length === 0) {
+    const empty = document.createElement('p');
+    empty.className = 'us-plate__empty';
+    empty.textContent = 'The plate is blank. Drive, and the line will come.';
+    paper.append(empty);
+  }
+
   root.append(paper);
 
   // --- footer -----------------------------------------------------------------
