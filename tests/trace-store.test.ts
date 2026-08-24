@@ -66,7 +66,7 @@ describe('TraceRecorder', () => {
     const rec = new TraceRecorder(null);
     rec.beginSeed(2026);
     let x = 0;
-    let z = 0;
+    const z = 0;
     let t = 0;
     const dt = 1 / 60;
     // drive a little first so recording is primed
@@ -89,7 +89,7 @@ describe('TraceRecorder', () => {
     const rec = new TraceRecorder(null);
     rec.beginSeed(2026);
     let x = 0;
-    let z = 0;
+    const z = 0;
     let t = 0;
     const dt = 1 / 60;
     for (let i = 0; i < 120; i++) {
