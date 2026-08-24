@@ -1,0 +1,90 @@
+/*
+ * Self-hosted fonts (subset latin woff2, vendored from Fontsource) with
+ * metric-matched fallbacks so `font-display: swap` causes no layout shift.
+ *
+ * Fallback metrics were measured with fontTools against the vendored files
+ * and the local system fonts they stand in for (Georgia / Segoe UI / Consolas):
+ *
+ *   Vollkorn 600        upem 1000  asc 95.2%  desc 44.1%  avgW 0.536em
+ *   Instrument Sans     upem 1000  asc 97.0%  desc 25.0%  avgW 0.564em
+ *   Martian Mono        upem 1000  asc 100.0% desc 20.0%  avgW 0.700em
+ *
+ * size-adjust = webfont avg width / fallback avg width.
+ */
+
+/* ---- Real faces ------------------------------------------------------- */
+
+@font-face {
+  font-family: 'Vollkorn';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../public/fonts/vollkorn-latin-600.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Vollkorn';
+  font-style: italic;
+  font-weight: 600;
+  font-display: swap;
+  src: url('../../public/fonts/vollkorn-latin-600-italic.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../public/fonts/instrument-sans-latin-400.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Instrument Sans';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('../../public/fonts/instrument-sans-latin-500.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Martian Mono';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../../public/fonts/martian-mono-latin-400.woff2') format('woff2');
+}
+
+/* ---- Metric-matched fallbacks ---------------------------------------- */
+
+@font-face {
+  font-family: 'Vollkorn Fallback';
+  font-style: normal;
+  font-weight: 600;
+  src: local('Georgia'), local('Times New Roman'), serif;
+  ascent-override: 95.2%;
+  descent-override: 44.1%;
+  line-gap-override: 0%;
+  size-adjust: 121.8%; /* 0.536 / 0.440 */
+}
+
+@font-face {
+  font-family: 'Instrument Sans Fallback';
+  font-style: normal;
+  font-weight: 400;
+  src: local('Segoe UI'), local('Helvetica Neue'), local(Arial), sans-serif;
+  ascent-override: 97%;
+  descent-override: 25%;
+  line-gap-override: 0%;
+  size-adjust: 104.6%; /* 0.564 / 0.539 */
+}
+
+@font-face {
+  font-family: 'Martian Mono Fallback';
+  font-style: normal;
+  font-weight: 400;
+  src: local(Consolas), local('Courier New'), monospace;
+  ascent-override: 100%;
+  descent-override: 20%;
+  line-gap-override: 0%;
+  size-adjust: 127.3%; /* 0.700 / 0.550 */
+}

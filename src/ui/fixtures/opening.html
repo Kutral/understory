@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Understory — fixture: opening</title>
+    <link rel="stylesheet" href="/src/styles/fonts.css" />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/shell.css" />
+    <link rel="stylesheet" href="/src/styles/opening.css" />
+    <link rel="stylesheet" href="/src/styles/hud.css" />
+    <link rel="stylesheet" href="/src/styles/pause.css" />
+    <style>
+      /* stand-in scene: dawn forest gradient so the line reads over "terrain" */
+      body { margin: 0; height: 100vh; overflow: hidden;
+        background:
+          radial-gradient(120% 60% at 50% 88%, #2f4234 0%, transparent 70%),
+          linear-gradient(180deg, #7c9aa6 0%, #93a88c 46%, #2f4234 78%, #101a16 100%);
+      }
+      #ui { position: fixed; inset: 0; }
+    </style>
+  </head>
+  <body>
+    <main style="position: fixed; inset: 0">
+    <div id="ui"></div>
+    </main>
+    <script type="module">
+      import { createUi } from '/src/ui/shell.ts';
+      const ui = createUi({
+        onStartDriving: () => console.info('[fixture] start driving'),
+      });
+      ui.mount(document.querySelector('#ui'), {
+        tier: 'medium', dprScale: 1, fovDeg: 60, bloom: false, dof: false,
+        grain: false, godRays: false, reducedMotion: false,
+      });
+      window.__ui = ui;
+      // freeze the line at full opacity for the screenshot
+      document.querySelector('.us-opening__line').style.animationDelay = '-3s';
+    </script>
+  </body>
+</html>

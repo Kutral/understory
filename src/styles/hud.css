@@ -1,0 +1,99 @@
+/*
+ * Driving HUD — diegetic, almost absent. A small enamelled dial lower-left
+ * (needle = speed) with a tiny sun/moon arc above it (time of day).
+ * Nothing else. Fades after 4s of steady driving; returns on input.
+ */
+
+.us-hud {
+  position: absolute;
+  left: 28px;
+  bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+  opacity: 1;
+  transition: opacity 900ms ease;
+}
+
+.us-hud[data-hidden='true'] {
+  opacity: 0;
+}
+
+/* --- Sun/moon arc ------------------------------------------------------ */
+
+.us-arc {
+  width: 104px;
+  height: 34px;
+  overflow: visible;
+}
+
+/* --- Enamel dial ------------------------------------------------------- */
+
+.us-dial {
+  width: 124px;
+  height: 124px;
+  filter: drop-shadow(var(--shadow-dial));
+}
+
+.us-dial__face {
+  fill: var(--birch);
+}
+
+.us-dial__rim {
+  fill: none;
+  stroke: var(--moss);
+  stroke-width: 7;
+}
+
+.us-dial__rim-inner {
+  fill: none;
+  stroke: var(--lichen);
+  stroke-width: 1.5;
+}
+
+.us-dial__tick {
+  stroke: var(--spruce);
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.us-dial__tick--major {
+  stroke-width: 3;
+}
+
+.us-dial__label {
+  font-family: var(--font-data);
+  font-size: 8px;
+  fill: var(--moss);
+  text-anchor: middle;
+  letter-spacing: 0.06em;
+}
+
+.us-dial__speed {
+  font-family: var(--font-data);
+  font-size: 21px;
+  font-weight: 400;
+  fill: var(--spruce);
+  text-anchor: middle;
+  font-variant-numeric: tabular-nums;
+}
+
+.us-dial__unit {
+  font-family: var(--font-data);
+  font-size: 7.5px;
+  fill: var(--lichen);
+  text-anchor: middle;
+  letter-spacing: 0.14em;
+}
+
+.us-dial__needle {
+  stroke: var(--lamp); /* the one warm highlight: the live reading */
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.us-dial__hub {
+  fill: var(--spruce);
+}

@@ -1,0 +1,62 @@
+/*
+ * The opening state (ART-DIRECTION 6.6): no title chrome. One Vollkorn
+ * italic line fades in over the live scene, holds, and fades out.
+ * Nothing else — no logo, no menu, no "press start".
+ */
+
+.us-opening {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  /* keep the line off dead centre so the dawn treeline stays readable */
+  padding-bottom: 12vh;
+}
+
+.us-opening__line {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: var(--display-md);
+  line-height: 1.25;
+  color: var(--birch);
+  text-align: center;
+  max-width: 22ch;
+  text-wrap: balance;
+  text-shadow:
+    0 1px 2px rgb(16 26 22 / 0.55),
+    0 4px 18px rgb(16 26 22 / 0.45);
+  opacity: 0;
+  animation: us-opening-line 9s ease-in-out forwards;
+}
+
+@keyframes us-opening-line {
+  0% {
+    opacity: 0;
+  }
+  18% {
+    opacity: 1;
+  }
+  72% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* fast exit when the first key starts the drive mid-hold */
+.us-opening[data-exiting='true'] .us-opening__line {
+  animation-name: us-opening-exit;
+  animation-duration: 0.9s;
+}
+
+@keyframes us-opening-exit {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}

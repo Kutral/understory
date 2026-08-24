@@ -1,0 +1,309 @@
+/*
+ * Pause / settings — a folded field permit, not a game menu.
+ * Birch paper card over the dimmed scene, moss controls, dashed lichen
+ * dividers like a typewritten form. Rounded, soft, hand-made.
+ */
+
+.us-veil {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgb(10 17 14 / 0.55);
+  pointer-events: auto;
+}
+
+/* the hidden attribute must win over display:grid */
+.us-veil[hidden] {
+  display: none;
+}
+
+.us-pause {
+  position: relative;
+  width: min(600px, 94vw);
+  max-height: min(86vh, 720px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background:
+    linear-gradient(160deg, rgb(255 252 240 / 0.5), transparent 42%),
+    var(--birch);
+  color: var(--ink);
+  border-radius: var(--radius-panel);
+  box-shadow: var(--shadow-panel);
+  padding: 28px 32px 24px;
+  font-family: var(--font-ui);
+}
+
+/* soft fold shadows, like paper that has been carried in a pocket */
+.us-pause::before,
+.us-pause::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgb(47 66 52 / 0.18), transparent);
+}
+.us-pause::before { top: 34%; }
+.us-pause::after { top: 36%; }
+
+.us-pause__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 6px;
+}
+
+.us-pause__title {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: var(--text-lg);
+  line-height: 1.2;
+}
+
+.us-pause__hint {
+  font-size: var(--text-xs);
+  color: var(--ink-soft);
+}
+
+.us-pause section + section {
+  margin-top: 4px;
+}
+
+.us-fieldset {
+  border: none;
+  border-top: 1px dashed var(--lichen);
+  padding: 12px 0 4px;
+}
+
+.us-fieldset legend,
+.us-pause__group-label {
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--ink-soft);
+  padding: 0;
+}
+
+/* --- Rows -------------------------------------------------------------- */
+
+.us-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 7px 0;
+}
+
+.us-row > label:first-child,
+.us-row > span.us-row__label {
+  font-size: var(--text-md);
+  flex: none;
+}
+
+.us-row__control {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  justify-content: flex-end;
+  min-width: 0;
+}
+
+.us-value {
+  font-family: var(--font-data);
+  font-size: var(--text-2xs);
+  color: var(--ink-soft);
+  min-width: 5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Inputs ------------------------------------------------------------ */
+
+.us-select,
+.us-input {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: rgb(255 253 245 / 0.65);
+  border: 1px solid var(--lichen);
+  border-radius: var(--radius-control);
+  padding: 6px 10px;
+}
+
+.us-select:hover,
+.us-input:hover {
+  border-color: var(--moss);
+}
+
+/* Faders */
+.us-range {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  max-width: 220px;
+  height: 22px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.us-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: var(--radius-chip);
+  background: var(--moss);
+}
+
+.us-range::-moz-range-track {
+  height: 4px;
+  border-radius: var(--radius-chip);
+  background: var(--moss);
+}
+
+.us-range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -6px;
+  border-radius: 50%;
+  background: var(--birch);
+  border: 2.5px solid var(--spruce);
+}
+
+.us-range::-moz-range-thumb {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--birch);
+  border: 2.5px solid var(--spruce);
+}
+
+/* Checkboxes */
+.us-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  font-size: var(--text-md);
+  cursor: pointer;
+}
+
+.us-check input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 17px;
+  height: 17px;
+  border: 1.5px solid var(--moss);
+  border-radius: 5px;
+  background: rgb(255 253 245 / 0.65);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.us-check input[type='checkbox']::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid var(--spruce);
+  border-bottom: 2px solid var(--spruce);
+  transform: rotate(-45deg) translate(0, -1px);
+  opacity: 0;
+}
+
+.us-check input[type='checkbox']:checked::after {
+  opacity: 1;
+}
+
+/* --- Buttons ----------------------------------------------------------- */
+
+.us-btn {
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--birch);
+  background: var(--moss);
+  border: none;
+  border-radius: var(--radius-control);
+  padding: 8px 18px;
+  cursor: pointer;
+}
+
+.us-btn:hover {
+  background: #38503f;
+}
+
+.us-btn--primary {
+  font-size: var(--text-md);
+  padding: 10px 30px;
+}
+
+.us-btn--ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--lichen);
+}
+
+.us-btn--ghost:hover {
+  border-color: var(--moss);
+  background: rgb(255 253 245 / 0.5);
+}
+
+.us-btn[disabled] {
+  opacity: 0.55;
+  cursor: default;
+}
+
+/* Key-cap buttons in the remap list */
+.us-key {
+  font-family: var(--font-data);
+  font-size: var(--text-2xs);
+  color: var(--ink);
+  background: rgb(255 253 245 / 0.7);
+  border: 1px solid var(--lichen);
+  border-bottom-width: 2.5px;
+  border-radius: 6px;
+  padding: 4px 10px;
+  min-width: 8ch;
+  cursor: pointer;
+}
+
+.us-key[data-listening='true'] {
+  border-color: var(--lamp); /* warmth means "waiting for you" */
+  color: var(--ink-soft);
+}
+
+/* Mixer fader rows are tighter than setting rows */
+.us-mixer .us-row {
+  padding: 3px 0;
+}
+
+.us-mixer .us-row > label {
+  font-size: var(--text-sm);
+}
+
+/* --- Footer ------------------------------------------------------------ */
+
+.us-pause__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border-top: 1px dashed var(--lichen);
+  margin-top: 14px;
+  padding-top: 16px;
+}
+
+.us-pause__seed {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.us-pause__seed .us-input {
+  width: 11ch;
+  font-family: var(--font-data);
+  font-size: var(--text-2xs);
+}

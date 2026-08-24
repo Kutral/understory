@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Understory — fixture: pause and settings</title>
+    <link rel="stylesheet" href="/src/styles/fonts.css" />
+    <link rel="stylesheet" href="/src/styles/tokens.css" />
+    <link rel="stylesheet" href="/src/styles/shell.css" />
+    <link rel="stylesheet" href="/src/styles/opening.css" />
+    <link rel="stylesheet" href="/src/styles/hud.css" />
+    <link rel="stylesheet" href="/src/styles/pause.css" />
+    <style>
+      body { margin: 0; height: 100vh; overflow: hidden;
+        background: linear-gradient(180deg, #7c9aa6 0%, #93a88c 48%, #2f4234 80%, #101a16 100%);
+      }
+      #ui { position: fixed; inset: 0; }
+    </style>
+  </head>
+  <body>
+    <main style="position: fixed; inset: 0">
+    <div id="ui"></div>
+    </main>
+    <script type="module">
+      import { createUi } from '/src/ui/shell.ts';
+      const ui = createUi();
+      ui.mount(document.querySelector('#ui'), {
+        tier: 'auto', dprScale: 1, fovDeg: 60, bloom: true, dof: false,
+        grain: true, godRays: true, reducedMotion: false,
+      });
+      window.__ui = ui;
+      ui.setSpeed(28);
+      ui.openPause(); // settings from frame one, Escape at any time
+    </script>
+  </body>
+</html>

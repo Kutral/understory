@@ -1,0 +1,55 @@
+/*
+ * Shell chrome shared by every UI screen: the fixed #ui root, keyboard
+ * focus, and reduced-motion handling. The shell never participates in
+ * document flow, so mounting it cannot shift layout.
+ */
+
+.us-root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-ui);
+  color: var(--birch);
+  -webkit-font-smoothing: antialiased;
+}
+
+.us-root *,
+.us-root *::before,
+.us-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* --- Visible keyboard focus, everywhere ------------------------------- */
+
+.us-root :focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+  border-radius: var(--radius-control);
+}
+
+.us-root :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --- Reduced motion ----------------------------------------------------
+ * Honours the OS preference and the in-game "Reduced motion" setting.
+ */
+
+.us-root[data-reduced-motion='true'] *,
+.us-root[data-reduced-motion='true'] *::before,
+.us-root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .us-root:not([data-reduced-motion='false']) *,
+  .us-root:not([data-reduced-motion='false']) *::before,
+  .us-root:not([data-reduced-motion='false']) *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
