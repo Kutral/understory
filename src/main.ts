@@ -207,6 +207,26 @@ async function boot(): Promise<void> {
     },
     bus,
   );
+  // --- pipeline warmup (perf gate: zero post-load shader compiles) -------------
+  // Streaming only advances inside the fixed tick, so without this block the
+  // first chunks attach AFTER the boot marker and their pipelines link lazily
+  // mid-drive. Pump the streamer until the inner rings are live, then compile
+  // every pipeline currently in the scene before declaring boot complete.
+  // Best-effort: capped so a pathological environment cannot hang boot.
+  {
+    const warmupDeadline = performance.now() + 20_000;
+    while (world.stats().live < 25 && performance.now() < warmupDeadline) {
+      const t = vehicle.transform;
+      world.update(t.px, t.pz);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+    try {
+      await render.renderer.compileAsync(scene, camera);
+    } catch (err) {
+      console.warn('[understory] pipeline warmup compileAsync failed', err);
+    }
+  }
+
   render.renderer.setAnimationLoop((t) => loop.frame(t));
   loop.start();
 

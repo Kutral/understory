@@ -30,7 +30,8 @@ import {
   type OverlaySample,
 } from './perf-stats';
 
-export const RUN_DURATION_MS = 180_000;
+export const RUN_DURATION_MS =
+  Number(process.env['PERF_DRIVE_MS']) > 0 ? Number(process.env['PERF_DRIVE_MS']) : 180_000;
 export const CPU_THROTTLE_RATE = 4;
 
 interface InPagePerf {
