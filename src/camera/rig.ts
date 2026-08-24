@@ -9,7 +9,6 @@ import type { CameraRig } from '@contracts/camera';
  * - Look-at target leads the car slightly toward its velocity for stability.
  * - Horizon lock clamps roll to zero and pitch to a narrow band.
  */
-const UP = new THREE.Vector3(0, 1, 0);
 
 export class ChaseCameraRig implements CameraRig {
   private readonly cam: THREE.PerspectiveCamera;
