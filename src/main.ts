@@ -127,6 +127,21 @@ async function boot(): Promise<void> {
   });
   ui.mount(uiRoot, quality.settings);
 
+  // --- autopilot (perf harness only: ?autopilot=1) -----------------------------
+  const params = new URLSearchParams(location.search);
+  const autopilot = params.has('autopilot');
+  if (autopilot) {
+    // Constant gentle drive for deterministic measurement runs.
+    input.state.throttle = 0.7;
+    let sweep = 0;
+    setInterval(() => {
+      sweep += 0.05;
+      input.state.steer = Math.sin(sweep) * 0.3;
+      void ensureAudio().catch(() => {}); // audio may stay suspended headless
+    }, 50);
+    console.info('[understory] autopilot engaged');
+  }
+
   // --- debug overlay ---------------------------------------------------------
   const dbg = debugEnabled() ? new DebugHud() : null;
 
