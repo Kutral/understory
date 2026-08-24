@@ -1,0 +1,48 @@
+/*
+ * Understory — palette + typography tokens.
+ * Source of truth: docs/ART-DIRECTION.md. Six named tokens, multi-hue,
+ * no single-accent look, no neon.
+ */
+
+:root {
+  /* Palette */
+  --spruce: #101a16; /* deep shade, panel grounds */
+  --moss: #2f4234; /* secondary surfaces */
+  --lichen: #93a88c; /* dividers, inactive states */
+  --birch: #e6dcc6; /* primary text on dark, paper grounds */
+  --lamp: #f0b24b; /* the one warm highlight — warmth must literally be the meaning */
+  --mist: #7c9aa6; /* cool counterweight: rain, dusk, water, secondary data */
+
+  /* Derived, quiet tints (no new hues) */
+  --birch-90: rgb(230 220 198 / 0.9);
+  --birch-70: rgb(230 220 198 / 0.7);
+  --spruce-80: rgb(16 26 22 / 0.8);
+  --paper-shade: #ded2b6; /* slightly deeper paper for pressed areas */
+  --ink: var(--spruce); /* ink on paper */
+  --ink-soft: #33463b;
+
+  /* Typography roles */
+  --font-display: 'Vollkorn', 'Vollkorn Fallback', Georgia, 'Times New Roman', serif;
+  --font-ui: 'Instrument Sans', 'Instrument Sans Fallback', 'Segoe UI', system-ui, sans-serif;
+  --font-data: 'Martian Mono', 'Martian Mono Fallback', Consolas, 'Courier New', monospace;
+
+  /* Type scale */
+  --text-2xs: 0.6875rem; /* 11px — dial numerals, data captions */
+  --text-xs: 0.75rem; /* 12px — labels */
+  --text-sm: 0.8125rem; /* 13px — body in panels */
+  --text-md: 0.9375rem; /* 15px — controls */
+  --text-lg: 1.25rem; /* 20px — panel headings rarely */
+  --display-md: clamp(2rem, 4.5vw, 3.25rem); /* the one opening line */
+  --tracking-label: 0.08em;
+
+  /* Field-kit shape language: soft, folded, hand-made — never hairline broadsheet */
+  --radius-panel: 14px;
+  --radius-control: 8px;
+  --radius-chip: 999px;
+  --shadow-panel: 0 18px 40px rgb(6 12 9 / 0.45), 0 2px 6px rgb(6 12 9 / 0.35);
+  --shadow-dial: 0 10px 24px rgb(6 12 9 / 0.5);
+
+  /* Focus — always visible, warm where it means "you are here" */
+  --focus-ring: 2px solid var(--lamp);
+  --focus-offset: 2px;
+}
