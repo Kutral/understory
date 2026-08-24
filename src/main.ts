@@ -25,6 +25,7 @@ import { createAudioBus } from './audio/audio';
 import { TraceRecorder, formatClock } from './ui/trace-store';
 import { createTracePlate } from './ui/trace-plate';
 import { createPhotoMode } from './ui/photo-mode';
+import { FxWorld } from './fx/fx-world';
 
 /**
  * Boot order follows the frame contract (src/contracts/frame.ts):
@@ -129,8 +130,15 @@ async function boot(): Promise<void> {
       world.setSeed(seed);
       vehicle.place(0, 0);
     },
-    onReducedMotionChange: () => {}, // fx agent (H) consumes this in Wave 2
-    onHorizonLockChange: () => {}, // camera rig consumes this in Wave 1.5 slice
+    onReducedMotionChange: (on) => {
+      // Reaches every motion source: particles freeze, plate animation
+      // skips, and the rig keeps horizon lock forced on.
+      fx.setReducedMotion(on);
+      if (on) rig.setHorizonLock(true);
+    },
+    onHorizonLockChange: (on) => {
+      if (!ui.settings.reducedMotion) rig.setHorizonLock(on);
+    },
   });
   ui.mount(uiRoot, quality.settings);
 
@@ -161,6 +169,10 @@ async function boot(): Promise<void> {
   trace.beginSeed(SEED);
   let sessionT = 0;
   let plateEl: HTMLElement | null = null;
+
+  // --- life-and-particles ------------------------------------------------------
+  const fx = new FxWorld({ seed: SEED });
+  scene.add(fx.points.rain, fx.points.fireflies, fx.points.motes, fx.points.leaves);
 
   function openPlate(): void {
     if (plateEl) return;
@@ -243,6 +255,18 @@ async function boot(): Promise<void> {
       // 3.6 The Trace recorder (decimated internally; saves are throttled)
       sessionT += 1 / 60;
       trace.record(t.px, t.pz, sessionT, Math.abs(vehicle.state.speedMs));
+      // 3.7 life-and-particles (weather/light from the sky snapshot)
+      const snap = sky.getSnapshot();
+      fx.fixedUpdate(
+        1 / 60,
+        {
+          weather: snap.weather === 'afterRain' ? 'after-rain' : snap.weather,
+          phase: snap.lightState,
+        },
+        t.px,
+        t.pz,
+        (x, z) => world.heightAt(x, z),
+      );
       // 5. sky
       sky.fixedUpdate(1 / 60);
       // 7. audio params (no allocation)
