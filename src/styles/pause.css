@@ -61,6 +61,10 @@
   font-weight: 600;
   font-size: var(--text-lg);
   line-height: 1.2;
+  /* Stamp index (art-pass obs. 1): thin double rule under the title, drawn
+     by the border itself — no new markup. */
+  padding-bottom: 5px;
+  border-bottom: 3px double color-mix(in srgb, var(--moss) 62%, transparent);
 }
 
 .us-pause__hint {
@@ -151,16 +155,31 @@
   cursor: pointer;
 }
 
+/* Ruler ticks (art-pass obs. 2): an engraved mark every 10%, laid over the
+   moss ground with one repeating gradient — still zero extra markup. */
 .us-range::-webkit-slider-runnable-track {
   height: 4px;
   border-radius: var(--radius-chip);
-  background: var(--moss);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 1px),
+      rgb(255 253 245 / 0.55) calc(10% - 1px) 10%
+    ),
+    var(--moss);
 }
 
+/* Firefox twin of the webkit track above — same moss ground, same ticks. */
 .us-range::-moz-range-track {
   height: 4px;
   border-radius: var(--radius-chip);
-  background: var(--moss);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent 0 calc(10% - 1px),
+      rgb(255 253 245 / 0.55) calc(10% - 1px) 10%
+    ),
+    var(--moss);
 }
 
 .us-range::-webkit-slider-thumb {
