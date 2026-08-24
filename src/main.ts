@@ -187,24 +187,26 @@ async function boot(): Promise<void> {
 
       render.renderer.render(scene, camera);
 
-      dbg?.update({
-        fps: loop.avgFrameMs > 0 ? Math.round(1000 / loop.avgFrameMs) : 0,
-        frameMs: loop.frameMs,
-        simMs: loop.simMs,
-        renderMs: loop.renderMs,
-        uiMs: 0,
-        drawCalls: render.renderer.info.render.calls,
-        triangles: render.renderer.info.render.triangles,
-        instances: render.renderer.info.render.frameCalls,
-        heapMb: (performance as unknown as { memory?: { usedJSHeapSize: number } }).memory
-          ? (performance as unknown as { memory: { usedJSHeapSize: number } }).memory
-              .usedJSHeapSize /
-            (1024 * 1024)
-          : null,
-        chunksLive: world.stats().live,
-        backend,
-        lightState: sky.lightState,
-      });
+      // Debug stats: only touch anything when the overlay exists (?debug=1).
+      // The object literal below allocates, so it must stay behind this guard.
+      if (dbg) {
+        const mem = (performance as unknown as { memory?: { usedJSHeapSize: number } })
+          .memory;
+        dbg.update({
+          fps: loop.avgFrameMs > 0 ? Math.round(1000 / loop.avgFrameMs) : 0,
+          frameMs: loop.frameMs,
+          simMs: loop.simMs,
+          renderMs: loop.renderMs,
+          uiMs: 0,
+          drawCalls: render.renderer.info.render.calls,
+          triangles: render.renderer.info.render.triangles,
+          instances: render.renderer.info.render.frameCalls,
+          heapMb: mem ? mem.usedJSHeapSize / (1024 * 1024) : null,
+          chunksLive: world.stats().live,
+          backend,
+          lightState: sky.lightState,
+        });
+      }
     },
     bus,
   );
