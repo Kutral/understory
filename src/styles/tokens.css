@@ -20,6 +20,9 @@
   --paper-shade: #ded2b6; /* slightly deeper paper for pressed areas */
   --ink: var(--spruce); /* ink on paper */
   --ink-soft: #33463b;
+  /* Warm typographic ink for lines set directly over the scene (critique #2):
+     brown-black like iron-gall ink dried warm, distinct from cool spruce. */
+  --ink-warm: #3a3226;
 
   /* Typography roles */
   --font-display: 'Vollkorn', 'Vollkorn Fallback', Georgia, 'Times New Roman', serif;
