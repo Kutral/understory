@@ -7,6 +7,7 @@ import './styles/opening.css';
 import './styles/pause.css';
 import RAPIER from '@dimforge/rapier3d-compat';
 import * as THREE from 'three/webgpu';
+import { CHUNK_RINGS } from '@contracts/constants';
 import { GameLoop } from './core/loop';
 import { RenderCore } from './core/renderer';
 import { DebugHud, debugEnabled } from './core/debug';
@@ -210,14 +211,21 @@ async function boot(): Promise<void> {
   // --- pipeline warmup (perf gate: zero post-load shader compiles) -------------
   // Streaming only advances inside the fixed tick, so without this block the
   // first chunks attach AFTER the boot marker and their pipelines link lazily
-  // mid-drive. Pump the streamer until the inner rings are live, then compile
-  // every pipeline currently in the scene before declaring boot complete.
-  // Best-effort: capped so a pathological environment cannot hang boot.
+  // mid-drive. Pump the streamer until the FULL desired chunk set is live —
+  // every LOD step's pool entries are then created and compiled before boot is
+  // declared; later driving only recycles existing entries (verified: with a
+  // 25-chunk threshold the outer-ring step 4/8 pipelines still linked at ~2-4 s
+  // into the drive). Best-effort: capped so a pathological environment cannot
+  // hang boot.
   {
-    const warmupDeadline = performance.now() + 20_000;
-    while (world.stats().live < 25 && performance.now() < warmupDeadline) {
+    const wantLive = (CHUNK_RINGS * 2 - 1) ** 2; // full 5-ring desired set = 121
+    const warmupDeadline = performance.now() + 90_000;
+    let warmedTo = 0;
+    while (performance.now() < warmupDeadline) {
       const t = vehicle.transform;
       world.update(t.px, t.pz);
+      warmedTo = world.stats().live;
+      if (warmedTo >= wantLive) break;
       await new Promise((resolve) => setTimeout(resolve, 0));
     }
     try {
@@ -225,6 +233,7 @@ async function boot(): Promise<void> {
     } catch (err) {
       console.warn('[understory] pipeline warmup compileAsync failed', err);
     }
+    console.info(`[understory] warmup: ${warmedTo}/${wantLive} chunks compiled pre-boot`);
   }
 
   render.renderer.setAnimationLoop((t) => loop.frame(t));
