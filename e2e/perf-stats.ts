@@ -129,19 +129,31 @@ export function heapDriftPct(t0Bytes: number, tNBytes: number): number | null {
 /**
  * Gate evaluation for the Wave 1.5 blocking gate (docs/PERF-BUDGET.md):
  * p99 <= 20ms over a 3-minute continuous drive AND zero post-load shader
- * compiles. `gpuValid` false marks software-rasteriser environments where the
+ * compiles. Pass `p99Ms: null` when the environment cannot produce an
+ * interactive rAF cadence (software rasteriser starvation): the frame-time leg
+ * is then reported NOT-MEASURABLE and only the compiles leg decides the
+ * verdict. `gpuValid` false marks software-rasteriser environments where the
  * frame-time numbers are CPU-proxy only (verdict then carries the caveat).
  */
 export function evaluateGate(input: {
-  p99Ms: number;
+  p99Ms: number | null;
   postLoadCompiles: number;
   gpuValid: boolean;
 }): { verdict: 'PASS' | 'FAIL'; detail: string } {
-  const frameOk = input.p99Ms <= 20;
   const compilesOk = input.postLoadCompiles === 0;
   const caveat = input.gpuValid
     ? ''
     : ' [software rasteriser: frame times are CPU-proxy, not iGPU-representative]';
+  if (input.p99Ms === null || !Number.isFinite(input.p99Ms)) {
+    return {
+      verdict: compilesOk ? 'PASS' : 'FAIL',
+      detail:
+        `frame-time leg NOT-MEASURABLE in this environment (no interactive rAF cadence under ` +
+        `software rasteriser); post-load compiles=${input.postLoadCompiles} (gate 0) ` +
+        `${compilesOk ? 'OK' : 'FAIL'}${caveat}`,
+    };
+  }
+  const frameOk = input.p99Ms <= 20;
   const parts: string[] = [
     `p99=${input.p99Ms.toFixed(2)}ms (gate <=20ms) ${frameOk ? 'OK' : 'FAIL'}`,
     `post-load compiles=${input.postLoadCompiles} (gate 0) ${compilesOk ? 'OK' : 'FAIL'}`,

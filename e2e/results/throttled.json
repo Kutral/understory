@@ -1,0 +1,122 @@
+{
+  "mode": "throttled",
+  "backend": "[understory] backend: webgl2; tone mapping: AgX",
+  "gpuValid": false,
+  "autopilotEngaged": true,
+  "driveProfile": "?autopilot=1 (throttle 0.7, sin steer sweep x0.3) + held KeyW; UI ignored",
+  "bootMs": 3426.0999999996275,
+  "firstInteractiveMs": null,
+  "frames": {
+    "n": 36,
+    "p50Ms": 1822.8500000005588,
+    "p99Ms": 55149.15,
+    "worstMs": 55454,
+    "meanMs": 13232.505555555535
+  },
+  "drawStats": {
+    "medianDrawCalls": 19,
+    "maxDrawCalls": 36,
+    "trisAtMaxDrawCalls": 265813,
+    "instancesAtMaxDrawCalls": 2,
+    "medianTriangles": 260949
+  },
+  "heap": {
+    "t0Mb": 19.550323486328125,
+    "t180Mb": 19.550323486328125,
+    "driftPct": 0
+  },
+  "shaderCompiles": {
+    "totalProgramLinks": 12,
+    "postLoadCompiles": 12,
+    "consoleThreeWebGLProgramMessages": 0,
+    "method": "getContext() wrapper shadowing createProgram/linkProgram/compileShader with timestamps; post-load = linkProgram calls after the '[understory] booted' console marker; 'THREE.WebGLProgram' console messages counted separately as a secondary sniffing channel"
+  },
+  "worstFrames": [
+    {
+      "deltaMs": 55454,
+      "cause": "chunk streaming / fixed-tick batch (sim 23.9ms)",
+      "near": {
+        "t": 361456.0999999996,
+        "fps": 7,
+        "frameMs": 143.4,
+        "simMs": 23.9,
+        "renderMs": 57.9,
+        "drawCalls": 30,
+        "triangles": 253525,
+        "instances": 2,
+        "chunksLive": 23
+      }
+    },
+    {
+      "deltaMs": 54583,
+      "cause": "chunk streaming / fixed-tick batch (sim 85.1ms)",
+      "near": {
+        "t": 305964.5999999996,
+        "fps": 8,
+        "frameMs": 102.8,
+        "simMs": 85.1,
+        "renderMs": 46.4,
+        "drawCalls": 28,
+        "triangles": 291413,
+        "instances": 2,
+        "chunksLive": 23
+      }
+    },
+    {
+      "deltaMs": 53497.79999999888,
+      "cause": "chunk streaming / fixed-tick batch (sim 82.5ms)",
+      "near": {
+        "t": 212819.90000000037,
+        "fps": 9,
+        "frameMs": 76.2,
+        "simMs": 82.5,
+        "renderMs": 19.3,
+        "drawCalls": 24,
+        "triangles": 341589,
+        "instances": 2,
+        "chunksLive": 23
+      }
+    },
+    {
+      "deltaMs": 53033.300000000745,
+      "cause": "chunk streaming / fixed-tick batch (sim 56.9ms, chunksLive 19->23)",
+      "near": {
+        "t": 159150.19999999925,
+        "fps": 9,
+        "frameMs": 42.9,
+        "simMs": 56.9,
+        "renderMs": 14.8,
+        "drawCalls": 22,
+        "triangles": 291413,
+        "instances": 2,
+        "chunksLive": 23
+      }
+    },
+    {
+      "deltaMs": 52358.40000000037,
+      "cause": "chunk streaming / fixed-tick batch (sim 76.1ms)",
+      "near": {
+        "t": 413981.19999999925,
+        "fps": 7,
+        "frameMs": 36.7,
+        "simMs": 76.1,
+        "renderMs": 12.8,
+        "drawCalls": 32,
+        "triangles": 240725,
+        "instances": 2,
+        "chunksLive": 23
+      }
+    }
+  ],
+  "worstFrameCause": "chunk streaming / fixed-tick batch (sim 23.9ms)",
+  "cadenceValid": false,
+  "simRenderSplit": {
+    "medianSimMs": 74.1,
+    "medianRenderMs": 79.15
+  },
+  "gate": {
+    "verdict": "FAIL",
+    "detail": "frame-time leg NOT-MEASURABLE in this environment (no interactive rAF cadence under software rasteriser); post-load compiles=12 (gate 0) FAIL [software rasteriser: frame times are CPU-proxy, not iGPU-representative]"
+  },
+  "measuredDurationS": 180
+}

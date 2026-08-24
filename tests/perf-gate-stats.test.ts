@@ -146,4 +146,12 @@ describe('evaluateGate', () => {
     expect(soft.verdict).toBe('PASS');
     expect(soft.detail).toContain('software rasteriser');
   });
+
+  it('reports frame-time leg NOT-MEASURABLE when cadence is null, compiles still decide', () => {
+    const nm = evaluateGate({ p99Ms: null, postLoadCompiles: 0, gpuValid: false });
+    expect(nm.verdict).toBe('PASS');
+    expect(nm.detail).toContain('NOT-MEASURABLE');
+    const nmFail = evaluateGate({ p99Ms: null, postLoadCompiles: 2, gpuValid: false });
+    expect(nmFail.verdict).toBe('FAIL');
+  });
 });

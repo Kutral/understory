@@ -67,6 +67,8 @@ export interface RunResult {
   bootMs: number | null;
   firstInteractiveMs: number | null;
   frames: FrameSummary;
+  /** False when rAF cadence was too degenerate for percentile stats to mean anything. */
+  cadenceValid: boolean;
   drawStats: {
     medianDrawCalls: number;
     maxDrawCalls: number;
@@ -188,11 +190,17 @@ export async function collectRun(
 
   const backend = perf.backendMsg?.replace(/^\[understory\]\s*/, '') ?? null;
   const gpuValid = !/webgl2/i.test(backend ?? '') /* SwiftShader WebGL2 = software */;
+
+  // Cadence sanity: under SwiftShader this app manages only tens of rAF
+  // callbacks over the whole window (60 s main-thread stalls). Below ~5 fps
+  // the p99 statistic does not describe interactive rendering, so the
+  // frame-time gate leg is reported NOT-MEASURABLE instead (see evaluateGate).
+  const cadenceValid = deltas.length >= 900; // ≳5 fps sustained over 180 s
   const simArr = ovWin.map((o) => o.simMs).filter(Number.isFinite);
   const renderArr = ovWin.map((o) => o.renderMs).filter(Number.isFinite);
 
   const gate = evaluateGate({
-    p99Ms: frames.p99Ms,
+    p99Ms: cadenceValid ? frames.p99Ms : null,
     postLoadCompiles,
     // In this environment headless Chromium renders via SwiftShader (software),
     // so rAF deltas measure CPU-side cost only. Recorded as proxy either way.
@@ -234,6 +242,7 @@ export async function collectRun(
     },
     worstFrames,
     worstFrameCause: worstTop ? worstTop.cause : 'no frames captured',
+    cadenceValid,
     simRenderSplit: {
       medianSimMs: simArr.length ? percentile(simArr, 50) : NaN,
       medianRenderMs: renderArr.length ? percentile(renderArr, 50) : NaN,

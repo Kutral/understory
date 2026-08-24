@@ -1,10 +1,11 @@
 # Perf & Quality (agent J) — Wave 1.5 gate build log
 
-Branch worked on: `feat/docs-deploy` (shared-worktree constraint from orchestrator;
-harness authored there, measurements taken from a detached linked worktree pinned to
-`060e25d` = main + the landed `?autopilot=1` hook). Deliverables owned: `e2e/*`,
-`scripts/perf-report.mjs`, `tests/perf-gate-stats.test.ts`, `docs/PERF.md`, this file.
-All numbers live in `docs/PERF.md`; nothing here is asserted without a run behind it.
+Branch worked on: `main` (shared worktree; harness committed as `183d736` after the
+orchestrator integrated camera rig + docs). Measurements are taken from a separate
+linked worktree pinned to `183d736`, built with `pnpm build`, served by
+`pnpm preview`. Deliverables owned: `e2e/*`, `scripts/perf-report.mjs`,
+`tests/perf-gate-stats.test.ts`, `docs/PERF.md`, this file. All numbers live in
+`docs/PERF.md`; nothing here is asserted without a run behind it.
 
 ## What was built
 
@@ -74,33 +75,18 @@ and removes the poll-clobbering race:
 
 ## Cross-dir diff requests / findings (NOT applied by me)
 
-### Diff A — src/main.ts: two Vector3 allocations + one clone per rendered frame
+### Diff A — src/main.ts: two Vector3 allocations + one clone per rendered frame — RESOLVED ON MAIN
 
-The chase-cam math in the render callback allocates every frame (~60 Hz):
+The chase-cam math in the render callback used to allocate every frame (~60 Hz):
+`chaseTarget.position.clone()` + `new THREE.Vector3(0, 2.6, -7.5)`. The camera-rig
+integration (`323bd06 feat(camera)`) replaced that block with `rig.render(_alpha)`,
+which no longer performs these per-frame allocations — verified by reading
+`src/main.ts` at `183d736`. No diff needed; kept here for the audit trail.
 
-```diff
---- a/src/main.ts (as of 060e25d)
-+++ b/src/main.ts
-@@
-   const chaseTarget = new THREE.Object3D();
-   scene.add(chaseTarget);
-+  // Reused every rendered frame; per-frame allocation here would churn the GC.
-+  const camGoal = new THREE.Vector3();
-@@
-     (_alpha) => {
-       const t = vehicle.transform;
-       chaseTarget.position.set(t.px, t.py, t.pz);
-       chaseTarget.quaternion.set(t.qx, t.qy, t.qz, t.qw);
--      const behind = chaseTarget.position.clone();
--      const back = new THREE.Vector3(0, 2.6, -7.5).applyQuaternion(chaseTarget.quaternion);
--      camera.position.lerp(behind.add(back), 0.08);
-+      camGoal.set(0, 2.6, -7.5).applyQuaternion(chaseTarget.quaternion).add(chaseTarget.position);
-+      camera.position.lerp(camGoal, 0.08);
-```
-
-Optional second hunk (same file): `dbg?.update({ ... })` builds a fresh `DebugStats`
-object literal per frame; hoist a module-level `const dbgStats: DebugStats = {...}`
-and mutate fields. Low priority — one small short-lived object.
+Optional second hunk (same file, still open): `dbg?.update({ ... })` builds a fresh
+`DebugStats` object literal per frame and calls `world.stats()` (another object
+literal) each frame; hoist a module-level mutable stats record and only refresh
+fields. Low priority — two small short-lived objects, debug-only path.
 
 ### Diff B — src/world/chunk-streamer.ts: per-tick Set + string keys
 
@@ -162,7 +148,8 @@ in `main.ts` after renderer init would decouple it:
 
 - Every number in `docs/PERF.md` is produced by `scripts/perf-report.mjs` reading
   collector output; raw rAF/overlay/heap series retained in
-  `e2e/results/<mode>-raw.json`.
+  `e2e/results/<mode>-raw.json` (committed — they are only ~4-5 KB each because the
+  degenerate cadence produces so few samples).
 - This environment (headless Chromium, Windows) renders through SwiftShader
   software rasterisation: frame-time gates are CPU-proxy only; GPU half of the
   budget is honestly NOT-MEASURED here and needs a hardware iGPU run.
@@ -170,3 +157,36 @@ in `main.ts` after renderer init would decouple it:
   (CDP `Profiler` over SwiftShader distorts badly); the report names the *phase*
   (chunk streaming / CPU sim / render submit) from correlated overlay samples
   instead of inventing a function name.
+
+## Measured outcome (2026-08-24, main @ 183d736; render path identical at 2059d5c)
+
+Full tables in `docs/PERF.md`. Headline, both runs (`?autopilot=1` + held KeyW,
+180 s window):
+
+| | unthrottled | CPU 4× throttled |
+|---|---|---|
+| rAF frames captured in 180 s | 21 (<5 fps → percentiles not representative) | 36 |
+| p50 / worst frame delta | 245 ms / 62.7 s | 1823 ms / 55.5 s |
+| Post-load shader compiles | **12** (gate 0 → FAIL leg) | **12** |
+| Median sim / render-submit | 26.3 / 13.2 ms | 74.1 / 79.2 ms |
+| Draw calls median / max | 11 / 20 | 19 / 36 |
+| Triangles at max-draw snapshot | 350 037 | 265 813 |
+| Heap t0 → t180 | 17.4 MB → 17.4 MB (weak evidence: interval starved) | 19.6 → 19.6 MB |
+| Boot marker | 1.0 s | 3.4 s |
+
+**Gate verdict recorded in docs/PERF.md: FAIL** — compiles leg fails (12 > 0);
+frame-time leg NOT-MEASURABLE here (SwiftShader cannot sustain interactive cadence;
+a 320×180 probe still showed multi-second stalls). CPU-sim proxy medians recorded
+per gate spec caveat.
+
+Environment note: flora (`FloraWorld`) landed at `2059d5c` but nothing instantiates
+it yet (verified by search), so the rendered scene at measurement time equals main's
+wired path. **Re-run this collector after flora wiring lands** — it is a single
+`pnpm e2e` away.
+
+## Re-measure procedure
+
+```
+pnpm build && pnpm e2e            # runs e2e/perf.spec.ts (~16 min: 2 × 3-min drive)
+node scripts/perf-report.mjs > docs/PERF.md
+```

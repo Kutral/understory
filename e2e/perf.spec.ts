@@ -20,8 +20,9 @@ const resultsDir = join(here, 'results');
 
 for (const mode of ['unthrottled', 'throttled'] as const) {
   test(`perf collection: 3-minute continuous drive (${mode})`, async ({ page }) => {
-    // 3 min drive + boot + reduction; default 120 s is far too short.
-    test.setTimeout(RUN_DURATION_MS + 300_000);
+    // 3 min drive + boot + reduction; default 120 s is far too short. The
+    // +600 s slack covers software-rasteriser stalls observed in this env.
+    test.setTimeout(RUN_DURATION_MS + 600_000);
 
     await preparePage(page, mode);
     const result: RunResult = await collectRun(page, mode);
