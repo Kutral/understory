@@ -339,48 +339,6 @@ async function boot(): Promise<void> {
     } catch (err) {
       console.warn('[understory] pipeline warmup compileAsync failed', err);
     }
-
-    // Warmup frames render at a reduced drawing buffer: pipeline linking is
-    // resolution-independent, so this keeps the added boot cost small even
-    // under software rasterisation. Restored below before loop.start().
-    const warmSize = new THREE.Vector2();
-    render.renderer.getSize(warmSize);
-    const warmPr = render.renderer.getPixelRatio();
-    render.renderer.setPixelRatio(0.25);
-    render.renderer.setSize(warmSize.x, warmSize.y);
-
-    // Step the sky through all six authored light bands with one real frame
-    // each, so every variant keyed on light-state-dependent state (moon disc
-    // visibility flip, star field, sun/moon key-light handover) links here
-    // instead of mid-drive. Hours sit safely inside each band for the current
-    // solar model: night / blueHour / dawn / goldenHour / morning / dusk.
-    const restoreH = sky.getSnapshot().timeOfDay;
-    const BAND_HOURS = [0, 5.7, 6.05, 6.8, 9, 17.95] as const;
-    for (const h of BAND_HOURS) {
-      sky.setTimeOfDay(h);
-      sky.applyVisuals(camera);
-      render.renderer.render(scene, camera);
-    }
-    sky.setTimeOfDay(restoreH);
-
-    // Ambient particle systems publish drawRange(0, alive), so their materials
-    // only link on the first NON-EMPTY draw — leaves/birds otherwise compile
-    // seconds into a drive. Force one non-empty frame per system; the first
-    // fixedUpdate republishes the real draw range.
-    const fxSystems = [
-      fx.points.rain,
-      fx.points.fireflies,
-      fx.points.motes,
-      fx.points.leaves,
-      fx.points.birds,
-    ];
-    for (const p of fxSystems) p.geometry.setDrawRange(0, 1);
-    sky.applyVisuals(camera);
-    render.renderer.render(scene, camera);
-    for (const p of fxSystems) p.geometry.setDrawRange(0, 0);
-
-    render.renderer.setPixelRatio(warmPr);
-    render.renderer.setSize(warmSize.x, warmSize.y);
     console.info(`[understory] warmup: ${warmedTo}/${wantLive} chunks compiled pre-boot`);
   }
 
