@@ -160,6 +160,11 @@ export class UnderstoryUi implements UiSystem {
       shell.dataset.reducedMotion = String(this.reducedMotionSig.value);
     });
     void unbindReducedMotion; // shell-lifetime binding
+    // The OS-level prefers-reduced-motion signal seeds the setting: honor it
+    // unless the user has explicitly chosen a value in the pause panel.
+    if (this.reducedMotionSig.value && !this.settings.reducedMotion) {
+      this.settings.reducedMotion = true;
+    }
     this.reducedMotionSig.set(this.settings.reducedMotion);
     this.store.flush();
 
