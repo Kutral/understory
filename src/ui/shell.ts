@@ -24,6 +24,7 @@ import { HudIdleTimer, performanceClock } from './idle';
 import { createHud, type ReadSignal } from './hud';
 import { createOpening } from './opening';
 import { createPause, type PauseHandle } from './pause';
+import { FocusRestore } from './remap';
 import { DEFAULT_BINDINGS, DEFAULT_SETTINGS, type Phase, type UiSettings } from './state';
 
 import '../styles/fonts.css';
@@ -85,6 +86,7 @@ export class UnderstoryUi implements UiSystem {
   private rootEl: HTMLElement | null = null;
   private openingEl: HTMLElement | null = null;
   private pauseHandle: PauseHandle | null = null;
+  private readonly focusRestore = new FocusRestore();
   private phaseBeforePause: Phase = 'opening';
   private started = false;
   private rafId: number | null = null;
@@ -218,6 +220,10 @@ export class UnderstoryUi implements UiSystem {
 
   openPause(): void {
     if (!this.pauseHandle || this.phaseSig.value === 'paused') return;
+    // remember where focus lived so closePause() can hand it back (a11y)
+    this.focusRestore.capture(
+      document.activeElement instanceof HTMLElement ? document.activeElement : null,
+    );
     this.phaseBeforePause = this.phaseSig.value;
     this.phaseSig.set('paused');
     this.pauseHandle.open();
@@ -228,6 +234,14 @@ export class UnderstoryUi implements UiSystem {
     if (!this.pauseHandle || this.phaseSig.value !== 'paused') return;
     this.pauseHandle.close();
     this.unpause(this.phaseBeforePause);
+    const prev = this.focusRestore.release();
+    if (prev && prev.isConnected) {
+      try {
+        prev.focus();
+      } catch {
+        // element vanished between the isConnected check and focus() — nothing to restore
+      }
+    }
   }
 
   dispose(): void {
