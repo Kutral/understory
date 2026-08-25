@@ -264,6 +264,28 @@ export const MID_CAP = 400;
 /** Far ring has no budget line; capped for sanity/impostor readability. */
 export const FAR_CAP = 1400;
 
+// ---- species draw budget ----------------------------------------------------
+//
+// Species indices are part of the placement contract:
+//   0 = pine, 1 = birch, 2 = oak, 3 = snag.
+export const FLORA_SPECIES_COUNT = 4;
+/** Native LOD bands that carry per-species meshes (full / mid / far). */
+export const FLORA_NATIVE_BANDS = 3;
+/** The impostor ring is ONE crossed-billboard draw regardless of species mix. */
+export const FLORA_IMPOSTOR_DRAWS = 1;
+
+/**
+ * Worst-case populated instanced draws when `speciesCount` species coexist:
+ * every native band renders one mesh per species, plus the single impostor
+ * draw (4 × 3 + 1 = 13 at full mix). Pure math so budgets can be asserted
+ * without constructing GPU objects.
+ */
+export function floraDrawCeiling(
+  speciesCount: number = FLORA_SPECIES_COUNT,
+): number {
+  return FLORA_NATIVE_BANDS * speciesCount + FLORA_IMPOSTOR_DRAWS;
+}
+
 export function bandForDistance(dM: number): FloraLod {
   if (dM <= FULL_MAX_M) return 'full';
   if (dM <= MID_MAX_M) return 'mid';
