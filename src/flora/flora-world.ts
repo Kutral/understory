@@ -14,6 +14,7 @@ import {
 } from './geometry';
 import { createImpostorTexture } from './impostor-texture';
 import {
+  createSpeciesMaterial,
   createImpostorMaterial,
   createPineMaterial,
   makeInstanceData,
@@ -30,6 +31,7 @@ import {
   type PlacedTree,
   type SurfaceSampler,
 } from './placement';
+import { buildSpeciesGeometry, type SpeciesLod } from './species-geometry';
 
 /**
  * FloraWorld — Wave 1.5 vertical-slice facade for the pine species.
@@ -108,6 +110,8 @@ export class FloraWorld {
   private readonly seed: number;
   private readonly cache = new Map<string, CachedChunk>();
   private readonly rings: Record<PineLod | 'impostor', RingDraw>;
+  /** Per-species native draws keyed `${lod}:${species}` (species 0 = pine). */
+  private readonly speciesRings = new Map<string, RingDraw>();
   private readonly pineUniforms: WindUniforms;
   private readonly impostorUniforms: WindUniforms;
   private readonly pineMaterial: THREE.MeshStandardNodeMaterial;
@@ -187,6 +191,40 @@ export class FloraWorld {
       built[lod] = { mesh, data, bandMaxM: bandMax[lod] };
     }
     this.rings = built;
+
+    // --- species rings (Wave 2): one instanced draw per native LOD per
+    // non-pine species. All four share the SAME aData buffer + wind uniforms,
+    // so flutter stays in sync; only geometry + palette differ.
+    const speciesPalette = {
+      1: createSpeciesMaterial(bandData, 'birch'),
+      2: createSpeciesMaterial(bandData, 'oak'),
+    } as const;
+    for (const lod of lods) {
+      for (const sp of [1, 2, 3] as const) {
+        const key = `${lod}:${sp}`;
+        const { geometry } = buildSpeciesGeometry(
+          sp === 1 ? 'birch' : sp === 2 ? 'oak' : 'snag',
+          lod as SpeciesLod,
+        );
+        geometry.setAttribute('aData', bandData);
+        // Snag is all-bark (aPart=0 everywhere) → shares the pine pipeline.
+        const material =
+          sp === 3
+            ? this.pineMaterial
+            : speciesPalette[sp as 1 | 2].material;
+        const mesh = new THREE.InstancedMesh(geometry, material, capacities[lod]);
+        mesh.count = 0;
+        mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+        mesh.frustumCulled = true;
+        this.geometries.push(geometry);
+        group.add(mesh);
+        this.speciesRings.set(key, {
+          mesh,
+          data: bandData,
+          bandMaxM: bandMax[lod],
+        });
+      }
+    }
   }
 
   /**
@@ -231,11 +269,15 @@ export class FloraWorld {
       this.rebuild();
     }
 
-    this.stats_.drawCalls =
+    let draws =
       (this.rings.full.mesh.count > 0 ? 1 : 0) +
       (this.rings.mid.mesh.count > 0 ? 1 : 0) +
       (this.rings.far.mesh.count > 0 ? 1 : 0) +
       (this.rings.impostor.mesh.count > 0 ? 1 : 0);
+    for (const draw of this.speciesRings.values()) {
+      if (draw.mesh.count > 0) draws++;
+    }
+    this.stats_.drawCalls = draws;
     this.stats_.colliders = {
       live: this.colliders?.size ?? 0,
       pooled: this.colliders?.pooledCount ?? 0,
@@ -292,6 +334,23 @@ export class FloraWorld {
     this.fillBand('full', bands);
     this.fillBand('mid', bands);
     this.fillBand('far', bands);
+
+    // Per-species native draws: split each band's list by placement.species.
+    for (const lod of ['full', 'mid', 'far'] as const) {
+      const list = bands[lod];
+      const buckets = new Map<number, PlacedTree[]>();
+      for (const t of list) {
+        const arr = buckets.get(t.placement.species);
+        if (arr) arr.push(t);
+        else buckets.set(t.placement.species, [t]);
+      }
+      for (const [sp, arr] of buckets) {
+        if (sp === 0) continue; // pine already filled via the base ring
+        const draw = this.speciesRings.get(`${lod}:${sp}`);
+        if (!draw) continue;
+        this.fillInstances(draw, arr, Math.min(arr.length, draw.data.count));
+      }
+    }
 
     // Impostors: assignBands sorts ascending by distance, so truncating at
     // capacity keeps the NEAREST ones — overflow is always the farthest trees.
