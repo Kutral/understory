@@ -202,3 +202,43 @@ terrain coverage — and are attributed (by timing fingerprint) to non-terrain l
 material variants, most likely sky/light-state; handed to sky/render-core owners.
 Full evidence: `docs/PERF.md` addendum + `e2e/results/warmup-verify-*`. Collector
 now supports `PERF_DRIVE_MS` env override for short verification drives.
+
+## Sky-band warmup probe — attempted, verified ineffective, REVERTED (agent D2, 2026-08-25)
+
+Branch `feat/sky-compile` (from main @ e1dff61). Hypothesis under test: the residual
+3 post-load links are lazy sky/light-state variants, so stepping the sky through all
+six authored bands pre-boot should link them. Implemented on top of the existing
+warmup block (`0aeb3d7`): six `setTimeOfDay` steps (night/blueHour/dawn/goldenHour/
+morning/dusk) with one real render each, plus one forced non-empty frame per ambient
+particle system (their `publish()` uses `drawRange(0, alive)`, so rain/fireflies/
+motes/leaves/birds otherwise first link on their first non-empty draw — leaves at
+~0.2 s, bird flush ~3.4 s). Warmup renders ran at pixelRatio 0.25; buffer and
+opening hour restored before `loop.start()`. Typecheck/lint/build green.
+
+**Verification (one headless run: build + playwright unthrottled spec,
+`PERF_DRIVE_MS=45000`, SwiftShader WebGL2 backend): post-load compiles stayed at 3**
+— same fingerprint as baseline (one link ~+170 ms after boot marker, two clustered
+~+3.5–3.7 s; baseline: +78/+3356/+3419 ms). The warmup DID work as designed: total
+pre-marker links rose 7 → 8 (exactly one new program = the shared particle
+`PointsMaterial`; three.js caches programs across identical materials, so all five
+particle systems share one), bootMs grew ~1.0 s (4308 vs 3348 baseline — inside the
+2 s budget). Conclusion: **the residual 3 are NOT sky/light-state variants and NOT
+ambient-particle first-draws**; the prescribed fix cannot drop the count, so the code
+change was reverted (`da7f3fb`) per the stop rule. Baseline `e2e/results/unthrottled*`
+were restored after the probe overwrote them.
+
+Evidence for whoever picks this up next:
+- Terrain is ruled out structurally: `GeometryPool` shares ONE material across every
+  chunk mesh (`src/world/geometry-pool.ts:200`), and the streamer pumps to the full
+  desired set pre-boot ("81/81" — note `(CHUNK_RINGS*2-1)**2` is 81, not the 121 in
+  the old comment).
+- Sky visuals are uniform-driven only (`visuals.apply` touches uniforms/lights); the
+  only state-flip is `moonMesh.visible`, which the band stepping covered.
+- The stable ~3.5 s cluster (two programs, ~140 ms apart) starts with motion: prime
+  suspects are vehicle-owned materials that first render under driving conditions
+  (brake/reverse/skid variants), or a lights-hash change triggered by something that
+  only exists once the loop is live. Next investigator: shadow `linkProgram`
+  timestamps against `vehicle/` material creation, or attach a profiler on hardware.
+
+Net: compiles remain 12 → 3 from the earlier iteration; this probe moved nothing and
+left the tree identical to main.
