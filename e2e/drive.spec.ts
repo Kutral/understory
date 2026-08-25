@@ -78,9 +78,10 @@ test.describe('keyboard drive', () => {
 
     // The overlay must be dismissed by the held keydown (checked AFTER the
     // hold so the assertion never itself blocks on a stalled main thread).
-    let openingGone = false;
+    let openingGone: boolean;
     try {
-      openingGone = (await page.locator('.us-opening').count({ timeout: 15_000 })) === 0;
+      await page.locator('.us-opening').waitFor({ state: 'detached', timeout: 15_000 });
+      openingGone = true;
     } catch {
       openingGone = false;
     }
