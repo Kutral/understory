@@ -7,7 +7,9 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
-    tags: ['v*']
+    # Note: tags don't trigger deploys — the github-pages environment
+    # protection rules only allow deployments from main. Cut releases by
+    # pushing main; tag afterwards.
 
 permissions:
   contents: read
