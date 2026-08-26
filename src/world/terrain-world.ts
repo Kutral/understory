@@ -6,6 +6,7 @@ import { ColliderRing, type RapierAPI } from './colliders';
 import { createExecutor, type GenExecutor } from './gen-executor';
 import { createTerrainMaterial } from './material';
 import { TerrainSource } from './terrain-source';
+import { CHUNK_RINGS } from '@contracts/constants';
 
 /**
  * TerrainWorld — the World-contract facade for agent B's subsystem.
@@ -15,10 +16,19 @@ import { TerrainSource } from './terrain-source';
  * meshes. Collider height grids come straight from worker output (LRU-cached).
  */
 
-/** Keeps recent chunk grids for collider construction without unbounded growth. */
-class GridCache {
+/**
+ * Keeps recent chunk grids for collider construction without unbounded growth.
+ *
+ * The cap MUST exceed the largest streamed set (the pre-boot warmup pumps the
+ * full desired ring, (2·CHUNK_RINGS+1)² chunks): a smaller cap lets the LRU
+ * evict the spawn-centre grids before the physics ring can claim them, and
+ * since those chunks are already `live` they never regenerate — leaving the
+ * car with no ground colliders (it falls through the world). Sizing for two
+ * extra rings beyond view distance keeps lookups hits under any pump order.
+ */
+export class GridCache {
   private map = new Map<string, Float32Array>();
-  constructor(private readonly cap = 64) {}
+  constructor(public readonly cap = (2 * CHUNK_RINGS + 3) ** 2) {}
 
   put(key: ChunkKey, heights: Float32Array): void {
     const k = `${key.cx},${key.cz}`;

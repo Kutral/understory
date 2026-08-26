@@ -70,6 +70,12 @@ async function boot(): Promise<void> {
   const sky: AttachedSkySystem = createSkySystem({ bus, scene, seed: 0x5eed });
   sky.setDriftMode(true); // "let it drift": a full day every 40 real minutes
 
+  // --- spawn ------------------------------------------------------------------
+  // 40 m inside the home chunk: clear of the chunk-corner seam at (0,0), where
+  // four heightfields meet and the shared edge is a physics blind spot.
+  const SPAWN_X = 40;
+  const SPAWN_Z = 40;
+
   // --- physics + vehicle ----------------------------------------------------
   await RAPIER.init();
   const rapierWorld = new RAPIER.World({ x: 0, y: -9.81, z: 0 });
@@ -91,7 +97,8 @@ async function boot(): Promise<void> {
     },
   });
   await vehicle.init(rapierWorld);
-  vehicle.place(0, 0);
+  vehicle.place(SPAWN_X, SPAWN_Z);
+
 
   // --- audio (created after a user gesture unlocks it; see first keypress) ---
   let audio: ReturnType<typeof createAudioBus> | null = null;
@@ -129,7 +136,7 @@ async function boot(): Promise<void> {
     },
     onSeedChange: (seed) => {
       world.setSeed(seed);
-      vehicle.place(0, 0);
+      vehicle.place(SPAWN_X, SPAWN_Z);
     },
     onReducedMotionChange: (on) => {
       // Reaches every motion source: particles freeze, plate animation
@@ -160,7 +167,6 @@ async function boot(): Promise<void> {
 
   // --- debug overlay ---------------------------------------------------------
   const dbg = debugEnabled() ? new DebugHud() : null;
-
   // --- the loop ---------------------------------------------------------------
   const rig = new ChaseCameraRig(camera);
 
