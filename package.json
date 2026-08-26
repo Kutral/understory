@@ -1,7 +1,7 @@
 {
   "name": "understory",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "description": "A calm endless-forest driving game for the browser.",
   "license": "MIT",
